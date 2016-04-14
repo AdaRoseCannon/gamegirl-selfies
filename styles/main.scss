@@ -81,11 +81,34 @@ body {
 	}
 }
 
+@mixin camera-background($iris) {
+	background: radial-gradient(ellipse at center, hsla(6,19%,15%,1) $iris, hsla(0,56%,56%,1) $iris + 6%,hsla(1,30%,30%,1) $iris/2 + 36%,hsla(2,29%,35%,1) $iris/4 + 45%,hsla(6,19%,5%,1) 100%);
+}
+
+$minPc: 12%;
+$maxPc: 25%;
+
+@keyframes expand {
+	@for $i from 0 through 10 {
+		#{$i * 10%} {
+			@include camera-background($minPc + $i * ($maxPc - $minPc)/10);
+		}
+	}
+}
+
+@keyframes contract {
+	@for $i from 10 through 0 {
+		#{100% - $i * 10%} {
+			@include camera-background($minPc + $i * ($maxPc - $minPc)/10);
+		}
+	}
+}
+
 .lens {
 	background: black;
-	background:
-		radial-gradient(ellipse at center, hsla(6,19%,15%,1) 20%, hsla(0,56%,56%,1) 26%,hsla(1,30%,30%,1) 49%,hsla(2,29%,35%,1) 50%,hsla(6,19%,5%,1) 100%)
-	;
+	animation-name: contract;
+	animation-duration: 0.5s;
+	@include camera-background($minPc);
 	border-radius: 100%;
 	display: inline-block;
 	position: relative;
@@ -94,12 +117,19 @@ body {
 	align-self: center;
 	overflow: hidden;
 	box-shadow: 0 0 0.8em -1.2em black,
-	0 0 0 0.4em #9A9A9A,
-	0 0 0.1em 0.4em #FFFFFF,
-	0 0 0 0.5em rgba(0, 0, 0, 0.65),
-	-0.05em 0.05em 0.1em 0.1em rgba(255, 255, 255, 0.6) inset,
-	2.1em -1.6em 0 -1.4em white,
-	2.2em -1.5em 0 -1.2em black;
+		0 0 0 0.4em #9A9A9A,
+		0 0 0.1em 0.4em #FFFFFF,
+		0 0 0 0.5em rgba(0, 0, 0, 0.65),
+		-0.05em 0.05em 0.1em 0.1em rgba(255, 255, 255, 0.6) inset,
+		2.1em -1.6em 0 -1.4em white,
+		2.2em -1.5em 0 -1.2em black;
+	transition: background-position 1s ease;
+
+	&:hover {
+		animation-name: expand;
+		animation-duration: 0.5s;
+		@include camera-background($maxPc);
+	}
 
 	// highlights
 	&:before,
