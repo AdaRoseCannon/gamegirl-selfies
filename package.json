@@ -1,0 +1,13 @@
+{
+  "name": "gamegirl-selfies",
+  "version": "1.0.0",
+  "description": "Port of camera from 81.ada.is to a seperate app.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Ada Rose Edwards",
+  "license": "MIT",
+  "devDependencies": {
+  }
+}

@@ -1,0 +1,20 @@
+body {
+	background: #dadada;
+}
+
+.logo {
+    font-weight: 800;
+    font-style: oblique;
+    letter-spacing: -0.08em;
+    color: rebeccapurple;
+
+	&:before {
+		content: "GAME GIRL";
+	}
+
+	&:after {
+		color: #CE6073;
+		font-size: 1.4em;
+		content: "SELFIES";
+	}
+}
