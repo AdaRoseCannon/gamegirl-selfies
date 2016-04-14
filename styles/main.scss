@@ -1,20 +1,98 @@
+---
+# this ensures Jekyll reads the file to be transformed into CSS later
+# only Main files contain this front matter, not partials.
+---
+
 body {
-	background: #dadada;
+	background: black;
+	display: flex;
+	flex-direction: column;
+	font-family: 'Open Sans';
 }
 
 .logo {
     font-weight: 800;
+	font-family: "Open Sans";
     font-style: oblique;
     letter-spacing: -0.08em;
     color: rebeccapurple;
+	line-height: 0.95em;
+	height: 2em;
+	font-size: 1.3em;
 
 	&:before {
 		content: "GAME GIRL";
+		float: left;
+		white-space: nowrap;
+		clear: both;
 	}
 
 	&:after {
 		color: #CE6073;
 		font-size: 1.4em;
 		content: "SELFIES";
+		white-space: nowrap;
+		float: left;
+		clear: both;
 	}
+}
+
+.container {
+	background: #dadada;
+	flex-grow: 1;
+    border-radius: 1em 1em 5em 1em;
+    padding: 1em;
+    box-shadow: 0 0 3em -1em black inset;
+	display: flex;
+	flex-direction: column;
+}
+
+.widget {
+	margin: 1em;
+
+	&.viewfinder {
+		background: black;
+		border-radius: 1em;
+		padding: 1em;
+		flex-basis: 0.5vmax;
+		align-self: center;
+	}
+
+	&.buttons {
+		margin-top: 6em;
+	}
+}
+
+.button-container {
+	display: inline-block;
+	transform: rotate(30deg);
+	float: right;
+    transform-origin: 100% 0;
+	margin-left: -4em;
+
+	.round-button {
+		transform: rotate(-30deg);
+		vertical-align: middle;
+	}
+}
+
+.round-button {
+	$color: #ED1476;
+	font-size: 1.2em;
+	width: 3em;
+	height: 3em;
+	border-radius: 2em;
+	background-color: $color;
+	border: none;
+	margin: 0 0.5em;
+	display: inline-block;
+	box-shadow:
+		0 2px 1px 0.1px darken($color, 5),
+		0 4px 1px 0.2px darken($color, 10),
+		0 6px 1px 0.3px darken($color, 15),
+		0 8px 1px 0.4px darken($color, 20),
+		0 10px 1px 2px darken($color, 25),
+		5px -5px 6px -3px darken($color, 10) inset,
+		-5px 5px 6px -3px lighten($color, 15) inset;
+	color: #ED1476;
 }
