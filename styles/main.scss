@@ -48,133 +48,43 @@ body {
 }
 
 .widget {
-	margin: 1em;
 
-	&.viewfinder {
-		background: black;
-		border-radius: 1em;
-		padding: 1em;
-		flex-basis: 0.5vmax;
-		align-self: center;
+	&.screen {
+		border: 5px solid rgba(0,0,0,0.6);
+		// border-radius: 1em;
+		box-shadow: 0.1em 0.1em 0.1em rgba(0,0,0,0.3) inset;
+		padding: 6px;
+		background: #EBF1EB;
+		display: flex;
+		flex-direction: column;
+		font-family: 'Press Start 2P', cursive;
+		font-size: 16px;
+		margin: 1em;
+
+		.viewfinder {
+			align-self: center;
+		}
+
+		label {
+			border: 3px solid palevioletred;
+			background: #9CD9F9;
+			box-shadow: 6px 6px 0 rgba(0,0,0,0.5);
+			margin: 12px;
+			padding: 6px;
+			display: inline-block;
+		}
+
+		button {
+			visibility: hidden;
+		}
 	}
 
 	&.lens-holder {
+		font-size: 10px;
 		display: flex;
 		justify-content: space-around;
-	}
-
-	&.buttons {
-		margin-top: 6em;
+		margin: 0.3em;
 	}
 }
 
-.button-container {
-	display: inline-block;
-	transform: rotate(30deg);
-	float: right;
-    transform-origin: 100% 0;
-	margin-left: -4em;
-
-	.round-button {
-		transform: rotate(-30deg);
-		vertical-align: middle;
-	}
-}
-
-@mixin camera-background($iris) {
-	background: radial-gradient(ellipse at center, hsla(6,19%,15%,1) $iris, hsla(0,56%,56%,1) $iris + 6%,hsla(1,30%,30%,1) $iris/2 + 36%,hsla(2,29%,35%,1) $iris/4 + 45%,hsla(6,19%,5%,1) 100%);
-}
-
-$minPc: 12%;
-$maxPc: 25%;
-
-@keyframes expand {
-	@for $i from 0 through 10 {
-		#{$i * 10%} {
-			@include camera-background($minPc + $i * ($maxPc - $minPc)/10);
-		}
-	}
-}
-
-@keyframes contract {
-	@for $i from 10 through 0 {
-		#{100% - $i * 10%} {
-			@include camera-background($minPc + $i * ($maxPc - $minPc)/10);
-		}
-	}
-}
-
-.lens {
-	background: black;
-	animation-name: contract;
-	animation-duration: 0.5s;
-	@include camera-background($minPc);
-	border-radius: 100%;
-	display: inline-block;
-	position: relative;
-	width: 3em;
-	height: 3em;
-	align-self: center;
-	overflow: hidden;
-	box-shadow: 0 0 0.8em -1.2em black,
-		0 0 0 0.4em #9A9A9A,
-		0 0 0.1em 0.4em #FFFFFF,
-		0 0 0 0.5em rgba(0, 0, 0, 0.65),
-		-0.05em 0.05em 0.1em 0.1em rgba(255, 255, 255, 0.6) inset,
-		2.1em -1.6em 0 -1.4em white,
-		2.2em -1.5em 0 -1.2em black;
-	transition: background-position 1s ease;
-
-	&:hover {
-		animation-name: expand;
-		animation-duration: 0.5s;
-		@include camera-background($maxPc);
-	}
-
-	// highlights
-	&:before,
-	&:after {
-		border-radius: 100%;
-		width: 100%;
-		height: 100%;
-		content: '';
-		background: white;
-		display: inline-block;
-		position: absolute;
-		top: 0;
-		left: 0;
-		background: radial-gradient(ellipse at 50% 15%, rgba(255,255,255,0.8) 0%,rgba(255,255,255,0) 80%);
-		background: linear-gradient(to bottom, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0) 100%);
-		box-shadow: 0 0 3em -0.5em blue;
-	}
-
-	&:before {
-		transform: translate(-20%, -20%) scale(0.34) rotate(-45deg) rotateX(35deg) rotate(180deg);
-	}
-
-	&:after {
-		transform:  translate(25%, 25%) rotate(10deg) scale(0.2) rotate(135deg) rotateX(35deg) rotate(180deg);
-		opacity: 0.8;
-	}
-}
-
-.deep-round-button {
-	$color: #ED1476;
-	font-size: 1.2em;
-	width: 3em;
-	height: 3em;
-	border-radius: 2em;
-	background-color: $color;
-	border: none;
-	margin: 0 0.5em;
-	display: inline-block;
-	box-shadow:
-		0 2px 1px 0.1px darken($color, 5),
-		0 4px 1px 0.2px darken($color, 10),
-		0 6px 1px 0.3px darken($color, 15),
-		0 8px 1px 0.4px darken($color, 20),
-		0 10px 1px 2px darken($color, 25),
-		5px -5px 6px -3px darken($color, 10) inset,
-		-5px 5px 6px -3px lighten($color, 15) inset;
-	color: #ED1476;
-}
+@import 'camera';
