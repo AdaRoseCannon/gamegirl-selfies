@@ -4,10 +4,24 @@
   "description": "Port of camera from 81.ada.is to a seperate app.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build:scripts": "mkdir -p scripts && rollup -i ./_scripts/main.js -o ./scripts/main.js -c -m && cd scripts && uglifyjs --source-map main.min.js.map -m --screw-ie8 main.js -o main.min.js && wc -c main.min.js",
+    "build:other": "mkdir -p scripts && true && cp ./node_modules/sw-toolbox/sw-toolbox.* ./scripts/",
+    "watch": "./parallel.sh \"nodemon --watch ./_scripts -e js --exec npm run build:js\" \"nodemon --watch ./client -e css,html,png,json --exec npm run build:other\"",
+    "build": "./parallel.sh \"npm run build:other\" \"npm run build:scripts\"",
+    "clean": "git clean -f",
+    "install": "npm run build"
   },
   "author": "Ada Rose Edwards",
   "license": "MIT",
   "devDependencies": {
+    "babel-preset-es2015-rollup": "^1.1.1",
+    "nodemon": "^1.9.1",
+    "rollup": "^0.25.8",
+    "rollup-plugin-babel": "^2.4.0",
+    "rollup-plugin-commonjs": "^2.2.1",
+    "rollup-plugin-json": "^2.0.0",
+    "rollup-plugin-node-resolve": "^1.5.0",
+    "sw-toolbox": "^3.1.1",
+    "uglifyjs": "^2.4.10"
   }
 }
