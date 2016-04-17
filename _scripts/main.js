@@ -2,7 +2,7 @@
 
 import TWEEN  from 'tween.js';
 const svg = document.getElementById('svg-to-raster');
-const rasterTarget = svg.querySelector('svg foreignobject div');
+const rasterTarget = svg.querySelector('svg div');
 const canvas = document.getElementById('render-target');
 const domWidth = canvas.clientWidth - (canvas.clientWidth % 3);
 const domHeight = canvas.clientHeight - (canvas.clientHeight % 3);
@@ -38,7 +38,8 @@ const stylePromise = (function updateStyle() {
 				a.readAsDataURL(blob);
 			});
 		})
-		.then(url => el.setAttribute('href', url));
+		.then(url => el.setAttribute('href', url))
+		.then(() => new Promise(resolve => setTimeout(resolve, 160)));
 	}));
 }());
 
@@ -85,10 +86,15 @@ function rasterDOM(dom) {
 
 			const width = pix.x[1] - pix.x[0];
 			const height = pix.y[1] - pix.y[0];
-			const cut = bufferContext.getImageData(pix.x[0], pix.y[0], width, height);
+			const data = bufferContext.getImageData(pix.x[0], pix.y[0], width, height);
+			bufferContext.clearRect(0,0,w,h);
 
 			rasterTarget.innerHTML = '';
-			resolve(cut);
+			resolve({
+				data,
+				width,
+				height
+			});
 		};
 	}));
 }
@@ -96,8 +102,7 @@ function rasterDOM(dom) {
 rasterDOM(`
 	<div class="logo"></div>
 	<span>Hello World</span>
-`).then(imageData => {
-	context.putImageData(imageData, 0, 0);
-
+`).then(image => {
+	context.putImageData(image.data, 0, 0);
 });
 
