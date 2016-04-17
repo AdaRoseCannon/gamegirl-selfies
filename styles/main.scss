@@ -23,9 +23,35 @@ body {
 	flex-direction: column;
     height: 100%;
     box-sizing: border-box;
+	width: 60vh;
+	max-width: 100%;
+    margin: auto;
+
+	@media all and (orientation:landscape) {
+		height: 60vw;
+		max-height: 100%;
+		max-width: initial;
+		width: 100%;
+		flex-direction: row;
+	}
 }
 
 .widget {
+
+	&.header {
+		display: flex;
+		font-size: 14px;
+		justify-content: space-around;
+		margin: 0.3em;
+
+		.logo {
+			font-size: 21px;
+		}
+
+		@media all and (orientation:landscape) {
+			flex-direction: column;
+		}
+	}
 
 	&.screen {
 		border: 5px solid rgba(0,0,0,0.6);
@@ -68,13 +94,6 @@ body {
 		button {
 			visibility: hidden;
 		}
-	}
-
-	&.lens-holder {
-		font-size: 10px;
-		display: flex;
-		justify-content: space-around;
-		margin: 0.3em;
 	}
 }
 
