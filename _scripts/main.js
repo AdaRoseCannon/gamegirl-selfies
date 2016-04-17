@@ -1,6 +1,6 @@
 'use strict';
 
-import TWEEN  from 'tween.js';
+import TWEEN from 'tween.js';
 const svg = document.getElementById('svg-to-raster');
 const rasterTarget = svg.querySelector('svg div');
 const canvas = document.getElementById('render-target');
@@ -8,6 +8,9 @@ const domWidth = canvas.clientWidth - (canvas.clientWidth % 3);
 const domHeight = canvas.clientHeight - (canvas.clientHeight % 3);
 const offscreenCanvas = document.createElement('canvas');
 const b64Start = 'data:image/svg+xml;base64,';
+
+const w = domWidth/3;
+const h = domHeight/3;
 const serializer = new XMLSerializer();
 
 canvas.style.flexGrow = 0;
@@ -15,10 +18,10 @@ canvas.style.flexShrink = 0;
 canvas.style.alignSelf = 'center';
 canvas.style.width = domWidth + 'px';
 canvas.style.height = domHeight + 'px';
-offscreenCanvas.width = canvas.width = domWidth / 3;
-offscreenCanvas.height = canvas.height = domHeight / 3;
-svg.setAttribute('width', domWidth / 3);
-svg.setAttribute('height', domHeight / 3);
+offscreenCanvas.width = canvas.width = w;
+offscreenCanvas.height = canvas.height = h;
+svg.setAttribute('width', w);
+svg.setAttribute('height', h);
 
 const bufferContext = initContext(offscreenCanvas);
 const context = initContext(canvas);
@@ -52,6 +55,10 @@ function initContext(canvas) {
 	return context;
 }
 
+function clear() {
+	context.clearRect(0, 0, domWidth/3, domHeight/3);
+}
+
 function rasterDOM(dom) {
 
 	if (typeof dom === 'string') {
@@ -65,8 +72,6 @@ function rasterDOM(dom) {
 		const bufferImg = document.createElement('img');
 		bufferImg.src = image64;
 		bufferImg.onload = function load() {
-			const w = domWidth / 3;
-			const h = domHeight / 3;
 			const pix = {x:[0, w], y:[0,h]};
 			bufferContext.clearRect(0,0,w,h);
 			bufferContext.drawImage(bufferImg, 0, 0);
@@ -99,10 +104,25 @@ function rasterDOM(dom) {
 	}));
 }
 
+requestAnimationFrame(animate);
+function animate(time) {
+    requestAnimationFrame(animate);
+    TWEEN.update(time);
+}
+
 rasterDOM(`
 	<div class="logo"></div>
-	<span>Hello World</span>
-`).then(image => {
-	context.putImageData(image.data, 0, 0);
+`).then(function ({data, height, width}) {
+
+	console.log(w,width,h,height);
+	const coords = { x: (w - width)/2, y: 0 };
+	new TWEEN.Tween(coords)
+		.to({ x: (w - width)/2, y: (h - height)/2 }, 1000)
+		.easing(TWEEN.Easing.Elastic.Out)
+		.onUpdate(function() {
+			clear();
+			context.putImageData(data, this.x, this.y);
+		})
+		.start();
 });
 
