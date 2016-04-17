@@ -72,15 +72,14 @@ function rasterDOM(dom) {
 		const bufferImg = document.createElement('img');
 		bufferImg.src = image64;
 		bufferImg.onload = function load() {
-			const pix = {x:[0, w], y:[0,h]};
+			const pix = {x:[w, 0], y:[h,0]};
 			bufferContext.clearRect(0,0,w,h);
 			bufferContext.drawImage(bufferImg, 0, 0);
 			const imageData = bufferContext.getImageData(0,0,w,h);
-
 			for (let y = 0; y < h; y++) {
 				for (let x = 0; x < w; x++) {
 					const index = (y * w + x) * 4;
-					if (imageData.data[index+3] > 0) {
+					if (imageData.data[index+3] !== 0) {
 						if (x < pix.x[0]) pix.x[0] = x;
 						if (y < pix.y[0]) pix.y[0] = y;
 						if (x > pix.x[1]) pix.x[1] = x;
@@ -104,25 +103,45 @@ function rasterDOM(dom) {
 	}));
 }
 
-requestAnimationFrame(animate);
-function animate(time) {
-    requestAnimationFrame(animate);
-    TWEEN.update(time);
-}
-
 rasterDOM(`
-	<div class="logo"></div>
+	<div class="logo" style="font-size: 14px;"></div>
 `).then(function ({data, height, width}) {
 
-	console.log(w,width,h,height);
-	const coords = { x: (w - width)/2, y: 0 };
-	new TWEEN.Tween(coords)
-		.to({ x: (w - width)/2, y: (h - height)/2 }, 1000)
-		.easing(TWEEN.Easing.Elastic.Out)
-		.onUpdate(function() {
+	let stale = false;
+	const logoCoords = { x: (w - width)/2, y: 0 };
+	const highlightCoords = { x: -15-w/2, y: -10, width: 15, height: 60 };
+
+	(function animate(time) {
+		requestAnimationFrame(animate);
+		TWEEN.update(time);
+		if (stale) {
 			clear();
-			context.putImageData(data, this.x, this.y);
-		})
+
+			context.globalCompositeOperation = 'source-over';
+			context.putImageData(data, logoCoords.x, logoCoords.y);
+
+			context.globalCompositeOperation = 'source-atop';
+			context.fillStyle = 'rgba(255,255,255,0.4)';
+			context.beginPath();
+			context.moveTo(logoCoords.x + highlightCoords.x + highlightCoords.width, logoCoords.y + highlightCoords.y + 0);
+			context.lineTo(logoCoords.x + highlightCoords.x + highlightCoords.width * 2, logoCoords.y + highlightCoords.y + 0);
+			context.lineTo(logoCoords.x + highlightCoords.x + highlightCoords.width, logoCoords.y + highlightCoords.y + highlightCoords.height);
+			context.lineTo(logoCoords.x + highlightCoords.x + 0, logoCoords.y + highlightCoords.y + highlightCoords.height);
+			context.fill();
+		}
+	}());
+
+	new TWEEN.Tween(highlightCoords)
+		.delay(1200)
+		.to({ x: w/2 + highlightCoords.width }, 1000)
+		.easing(TWEEN.Easing.Quadratic.InOut)
+		.onUpdate(() => stale = true)
+		.start();
+
+	new TWEEN.Tween(logoCoords)
+		.to({ y: (h - height)/2 }, 2000)
+		.easing(TWEEN.Easing.Elastic.Out)
+		.onUpdate(() => stale = true)
 		.start();
 });
 
