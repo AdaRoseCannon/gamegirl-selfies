@@ -21,19 +21,25 @@
 	<link rel="stylesheet" href="styles/main.css">
 </head><body>
 	<div class="container">
-		<div class="logo"></div>
+		<div class="logo" style="position: absolute;"></div>
 		<div class="widget lens-holder">
 			<div class="lens"></div>
 		</div>
 		<div class="widget screen">
-			<div class="viewfinder">
-				<!-- DEMO IMAGE -->
-				<img src="https://81.ada.is/images/get-image?postid=Lady_Ada_King_1460589783742"></img>
-			</div>
-			<div class="buttons">
-				<label class="button-container">TAKE PHOTO<button class="round-button"></button></label>
-				<label class="button-container">FILTER<button class="round-button"></button></label>
-			</div>
+			<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" id="svg-to-raster">
+				<foreignObject width="100%" height="100%">
+					<html xmlns="http://www.w3.org/1999/xhtml">
+						<head>
+							<link rel="stylesheet" href="styles/pixel.css">
+						</head>
+						<body>
+							<div></div>
+						</body>
+					</html>
+				</foreignObject>
+			</svg>
+			<canvas id="render-target"></canvas>
 		</div>
 	</div>
+	<script src="scripts/main.min.js"></script>
 </body></html>

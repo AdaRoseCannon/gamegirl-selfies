@@ -10,41 +10,14 @@ body {
 	font-family: 'Open Sans';
 }
 
-.logo {
-    font-weight: 800;
-	font-family: "Open Sans";
-    font-style: oblique;
-    letter-spacing: -0.08em;
-    color: rebeccapurple;
-	line-height: 0.95em;
-	height: 2em;
-	font-size: 1.3em;
-	position: absolute;
-
-	&:before {
-		content: "GAME GIRL";
-		float: left;
-		white-space: nowrap;
-		clear: both;
-	}
-
-	&:after {
-		color: #CE6073;
-		font-size: 1.4em;
-		content: "SELFIES";
-		white-space: nowrap;
-		float: left;
-		clear: both;
-	}
-}
-
 .container {
 	background: lavenderblush;
     border-radius: 1em 1em 5em 1em;
     padding: 1em;
-    // box-shadow: 0 0 3em -1em black inset;
 	display: flex;
 	flex-direction: column;
+    height: 100%;
+    box-sizing: border-box;
 }
 
 .widget {
@@ -54,15 +27,28 @@ body {
 		// border-radius: 1em;
 		box-shadow: 0.1em 0.1em 0.1em rgba(0,0,0,0.3) inset;
 		padding: 6px;
-		background: #EBF1EB;
+		background: #C9CAC9;
 		display: flex;
 		flex-direction: column;
 		font-family: 'Press Start 2P', cursive;
 		font-size: 16px;
 		margin: 1em;
+		flex-grow: 1;
+		justify-content: center;
 
-		.viewfinder {
-			align-self: center;
+		svg {
+			display: none;
+		}
+
+		canvas {
+			flex-grow: 1;
+    		align-self: stretch;
+			image-rendering: -moz-crisp-edges;
+			image-rendering: -o-crisp-edges;
+			image-rendering: -webkit-optimize-contrast;
+			image-rendering: crisp-edges;
+			image-rendering: pixelated;
+			-ms-interpolation-mode: nearest-neighbor;
 		}
 
 		label {
@@ -88,3 +74,4 @@ body {
 }
 
 @import 'camera';
+@import 'logo';

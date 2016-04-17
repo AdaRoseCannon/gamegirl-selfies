@@ -1,0 +1,26 @@
+.logo {
+    font-weight: 800;
+	font-family: "Open Sans";
+    font-style: oblique;
+    letter-spacing: -0.08em;
+    color: rebeccapurple;
+	line-height: 0.95em;
+	height: 2em;
+	font-size: 1.3em;
+
+	&:before {
+		content: "GAME GIRL";
+		float: left;
+		white-space: nowrap;
+		clear: both;
+	}
+
+	&:after {
+		color: #CE6073;
+		font-size: 1.4em;
+		content: "SELFIES";
+		white-space: nowrap;
+		float: left;
+		clear: both;
+	}
+}

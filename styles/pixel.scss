@@ -1,0 +1,12 @@
+---
+# this ensures Jekyll reads the file to be transformed into CSS later
+# only Main files contain this front matter, not partials.
+---
+
+svg foreignObject div {
+	font-size: 8px;
+	font-family: "Press Start P2";
+}
+
+@import 'fonts';
+@import 'logo';
