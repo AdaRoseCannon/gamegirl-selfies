@@ -1014,17 +1014,17 @@ function tweenPromise(tween) {
 	});
 }
 
-rasterDOM('\n\t<div class="logo" style="font-size: 14px;"></div>\n').then(function (_ref) {
-	var data = _ref.data;
-	var height = _ref.height;
-	var width = _ref.width;
-
+rasterDOM('\n\t<div class="logo" style="font-size: 14px;"></div>\n').then(function (logo) {
 
 	var stale = false;
 	var states = ['START', 'SPLASH', 'CAMERA'];
 	var state = 'START';
-	var logoCoords = { x: (w - width) / 2, y: 0 };
-	var highlightCoords = { x: -30 - width / 2, y: -10, width: 15, height: 60 };
+	logo.x = (w - logo.width) / 2;
+	logo.y = 0;
+	var sprites = {
+		logo: logo,
+		highlight: { x: -30 - logo.width / 2, y: -10, width: 15, height: 60 }
+	};
 
 	(function animate(time) {
 		requestAnimationFrame(animate);
@@ -1034,29 +1034,57 @@ rasterDOM('\n\t<div class="logo" style="font-size: 14px;"></div>\n').then(functi
 				case 'START':
 					clear();
 					context.globalCompositeOperation = 'source-over';
-					context.putImageData(data, logoCoords.x, logoCoords.y);
+					context.putImageData(logo.data, sprites.logo.x, sprites.logo.y);
 
 					context.globalCompositeOperation = 'source-atop';
 					context.fillStyle = 'rgba(255,255,255,0.4)';
 					context.beginPath();
-					context.moveTo(logoCoords.x + highlightCoords.x + highlightCoords.width, logoCoords.y + highlightCoords.y + 0);
-					context.lineTo(logoCoords.x + highlightCoords.x + highlightCoords.width * 2, logoCoords.y + highlightCoords.y + 0);
-					context.lineTo(logoCoords.x + highlightCoords.x + highlightCoords.width, logoCoords.y + highlightCoords.y + highlightCoords.height);
-					context.lineTo(logoCoords.x + highlightCoords.x + 0, logoCoords.y + highlightCoords.y + highlightCoords.height);
+					context.moveTo(sprites.logo.x + sprites.highlight.x + sprites.highlight.width, sprites.logo.y + sprites.highlight.y + 0);
+					context.lineTo(sprites.logo.x + sprites.highlight.x + sprites.highlight.width * 2, sprites.logo.y + sprites.highlight.y + 0);
+					context.lineTo(sprites.logo.x + sprites.highlight.x + sprites.highlight.width, sprites.logo.y + sprites.highlight.y + sprites.highlight.height);
+					context.lineTo(sprites.logo.x + sprites.highlight.x + 0, sprites.logo.y + sprites.highlight.y + sprites.highlight.height);
 					context.fill();
 					break;
+				case 'SPLASH':
+					clear();
+					context.globalCompositeOperation = 'source-over';
+					context.putImageData(sprites.pageSplitTop.data, sprites.pageSplitTop.x, sprites.pageSplitTop.y);
+					context.putImageData(sprites.pageSplitBottom.data, sprites.pageSplitBottom.x, sprites.pageSplitBottom.y);
 			}
 		}
 	})();
 
-	Promise.all([new TWEEN.Tween(highlightCoords).delay(1200).to({ x: width / 2 + highlightCoords.width * 2 }, 1000).easing(TWEEN.Easing.Quadratic.InOut).onUpdate(function () {
+	Promise.all([new TWEEN.Tween(sprites.highlight).delay(1200).to({ x: sprites.logo.width / 2 + sprites.highlight.width * 2 }, 1000).easing(TWEEN.Easing.Quadratic.InOut).onUpdate(function () {
 		return stale = true;
-	}).start(), new TWEEN.Tween(logoCoords).to({ y: (h - height) / 2 }, 2000).easing(TWEEN.Easing.Elastic.Out).onUpdate(function () {
+	}).start(), new TWEEN.Tween(sprites.logo).to({ y: (h - sprites.logo.height) / 2 }, 2000).easing(TWEEN.Easing.Elastic.Out).onUpdate(function () {
 		return stale = true;
 	}).start()].map(function (t) {
 		return tweenPromise(t);
 	})).then(function () {
 		state = states[1];
+		var splitPos = Math.floor(sprites.logo.y + sprites.logo.height * 0.4);
+		var data1 = context.getImageData(0, 0, w, splitPos);
+		var data2 = context.getImageData(0, splitPos, w, h - splitPos);
+		sprites.pageSplitTop = {
+			data: data1,
+			width: w,
+			height: splitPos,
+			x: 0,
+			y: 0
+		};
+		sprites.pageSplitBottom = {
+			data: data2,
+			width: w,
+			height: h - splitPos,
+			x: 0,
+			y: splitPos
+		};
+
+		return Promise.all([new TWEEN.Tween(sprites.pageSplitTop).to({ y: -sprites.pageSplitTop.height }, 1000).easing(TWEEN.Easing.Quadratic.Out).onUpdate(function () {
+			return stale = true;
+		}).start(), new TWEEN.Tween(sprites.pageSplitBottom).to({ y: h }, 1000).easing(TWEEN.Easing.Quadratic.Out).onUpdate(function () {
+			return stale = true;
+		}).start()].map(tweenPromise));
 	});
 });
 }());
