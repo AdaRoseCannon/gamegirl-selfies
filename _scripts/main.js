@@ -151,20 +151,23 @@ rasterDOM(`
 		}
 	}());
 
-	Promise.all([
-		new TWEEN.Tween(sprites.highlight)
-			.delay(1200)
-			.to({ x: sprites.logo.width/2 + sprites.highlight.width*2 }, 1000)
-			.easing(TWEEN.Easing.Quadratic.InOut)
-			.onUpdate(() => stale = true)
-			.start(),
+	new Promise(resolve => requestAnimationFrame(resolve))
+	.then(function () {
+		return Promise.all([
+			new TWEEN.Tween(sprites.highlight)
+				.delay(1200)
+				.to({ x: sprites.logo.width/2 + sprites.highlight.width*2 }, 1000)
+				.easing(TWEEN.Easing.Quadratic.InOut)
+				.onUpdate(() => stale = true)
+				.start(),
 
-		new TWEEN.Tween(sprites.logo)
-			.to({ y: (h - sprites.logo.height)/2 }, 2000)
-			.easing(TWEEN.Easing.Elastic.Out)
-			.onUpdate(() => stale = true)
-			.start()
-	].map(t => tweenPromise(t)))
+			new TWEEN.Tween(sprites.logo)
+				.to({ y: (h - sprites.logo.height)/2 }, 2000)
+				.easing(TWEEN.Easing.Elastic.Out)
+				.onUpdate(() => stale = true)
+				.start()
+		].map(t => tweenPromise(t)))
+	})
 	.then(function () {
 		state = states[1];
 		const splitPos = Math.floor(sprites.logo.y + sprites.logo.height * 0.4);

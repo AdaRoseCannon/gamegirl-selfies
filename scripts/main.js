@@ -1054,13 +1054,17 @@ rasterDOM('\n\t<div class="logo" style="font-size: 14px;"></div>\n').then(functi
 		}
 	})();
 
-	Promise.all([new TWEEN.Tween(sprites.highlight).delay(1200).to({ x: sprites.logo.width / 2 + sprites.highlight.width * 2 }, 1000).easing(TWEEN.Easing.Quadratic.InOut).onUpdate(function () {
-		return stale = true;
-	}).start(), new TWEEN.Tween(sprites.logo).to({ y: (h - sprites.logo.height) / 2 }, 2000).easing(TWEEN.Easing.Elastic.Out).onUpdate(function () {
-		return stale = true;
-	}).start()].map(function (t) {
-		return tweenPromise(t);
-	})).then(function () {
+	new Promise(function (resolve) {
+		return requestAnimationFrame(resolve);
+	}).then(function () {
+		return Promise.all([new TWEEN.Tween(sprites.highlight).delay(1200).to({ x: sprites.logo.width / 2 + sprites.highlight.width * 2 }, 1000).easing(TWEEN.Easing.Quadratic.InOut).onUpdate(function () {
+			return stale = true;
+		}).start(), new TWEEN.Tween(sprites.logo).to({ y: (h - sprites.logo.height) / 2 }, 2000).easing(TWEEN.Easing.Elastic.Out).onUpdate(function () {
+			return stale = true;
+		}).start()].map(function (t) {
+			return tweenPromise(t);
+		}));
+	}).then(function () {
 		state = states[1];
 		var splitPos = Math.floor(sprites.logo.y + sprites.logo.height * 0.4);
 		var data1 = context.getImageData(0, 0, w, splitPos);
