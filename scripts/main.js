@@ -5,6 +5,49 @@ var window = window || self
 var __commonjs_global = typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : this;
 function __commonjs(fn, module) { return module = { exports: {} }, fn(module, module.exports, __commonjs_global), module.exports; }
 
+
+var babelHelpers = {};
+
+babelHelpers.slicedToArray = function () {
+  function sliceIterator(arr, i) {
+    var _arr = [];
+    var _n = true;
+    var _d = false;
+    var _e = undefined;
+
+    try {
+      for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) {
+        _arr.push(_s.value);
+
+        if (i && _arr.length === i) break;
+      }
+    } catch (err) {
+      _d = true;
+      _e = err;
+    } finally {
+      try {
+        if (!_n && _i["return"]) _i["return"]();
+      } finally {
+        if (_d) throw _e;
+      }
+    }
+
+    return _arr;
+  }
+
+  return function (arr, i) {
+    if (Array.isArray(arr)) {
+      return arr;
+    } else if (Symbol.iterator in Object(arr)) {
+      return sliceIterator(arr, i);
+    } else {
+      throw new TypeError("Invalid attempt to destructure non-iterable instance");
+    }
+  };
+}();
+
+babelHelpers;
+
 var Tween = __commonjs(function (module, exports, global) {
 /**
  * Tween.js - Licensed under the MIT license
@@ -924,6 +967,7 @@ svg.setAttribute('height', h);
 
 var bufferContext = initContext(offscreenCanvas);
 var context = initContext(canvas);
+var renderPromise = Promise.resolve();
 
 var stylePromise = function updateStyle() {
 	var p = [].slice.call(svg.querySelectorAll('link'));
@@ -962,16 +1006,26 @@ function clear() {
 	context.clearRect(0, 0, domWidth / 3, domHeight / 3);
 }
 
+function renderData(composite) {
+	if (this.data) {
+		context.globalCompositeOperation = composite || 'source-over';
+		context.putImageData(this.data, this.x, this.y);
+	}
+}
+
 function rasterDOM(dom) {
 
-	if (typeof dom === 'string') {
-		rasterTarget.innerHTML = dom;
-	} else {
-		rasterTarget.appendChild(dom.clone(true));
-	}
-
-	return stylePromise.then(function () {
+	renderPromise = renderPromise.then(function () {
+		return stylePromise;
+	}).then(function () {
 		return new Promise(function (resolve) {
+
+			if (typeof dom === 'string') {
+				rasterTarget.innerHTML = dom;
+			} else {
+				rasterTarget.appendChild(dom.clone(true));
+			}
+
 			var image64 = b64Start + btoa(serializer.serializeToString(svg));
 			var bufferImg = document.createElement('img');
 			bufferImg.src = image64;
@@ -993,7 +1047,7 @@ function rasterDOM(dom) {
 				}
 
 				var width = pix.x[1] - pix.x[0];
-				var height = pix.y[1] - pix.y[0];
+				var height = pix.y[1] - pix.y[0] + 1;
 				var data = bufferContext.getImageData(pix.x[0], pix.y[0], width, height);
 				bufferContext.clearRect(0, 0, w, h);
 
@@ -1001,11 +1055,16 @@ function rasterDOM(dom) {
 				resolve({
 					data: data,
 					width: width,
-					height: height
+					height: height,
+					x: pix.x[0],
+					y: pix.y[0],
+					render: renderData
 				});
 			};
 		});
 	});
+
+	return renderPromise;
 }
 
 function tweenPromise(tween) {
@@ -1014,17 +1073,40 @@ function tweenPromise(tween) {
 	});
 }
 
-rasterDOM('\n\t<div class="logo" style="font-size: 14px;"></div>\n').then(function (logo) {
+Promise.all([rasterDOM('<div class="logo" data-first="GAMEGIRL" style="font-size: 14px;"></div>'), rasterDOM('<div class="logo" data-second="SELFIES" style="font-size: 14px;"></div>')]).then(function (_ref) {
+	var _ref2 = babelHelpers.slicedToArray(_ref, 2);
+
+	var logo1 = _ref2[0];
+	var logo2 = _ref2[1];
 
 	var stale = false;
 	var states = ['START', 'SPLASH', 'CAMERA'];
 	var state = 'START';
-	logo.x = (w - logo.width) / 2;
-	logo.y = 0;
+	logo1.x = (w - logo1.width) / 2;
+	logo2.x = (w - logo2.width) / 2;
+	logo1.y = 0;
+	logo2.y = logo1.height;
 	var sprites = {
-		logo: logo,
-		highlight: { x: -30 - logo.width / 2, y: -10, width: 15, height: 60 }
+		logo1: logo1,
+		logo2: logo2,
+		highlight: { x: -30 - logo1.width / 2, y: -10, width: 15, height: 60, render: function render() {
+				context.globalCompositeOperation = 'source-atop';
+				context.fillStyle = 'rgba(255,255,255,0.4)';
+				context.beginPath();
+				context.moveTo(sprites.logo1.x + this.x + this.width, sprites.logo1.y + this.y + 0);
+				context.lineTo(sprites.logo1.x + this.x + this.width * 2, sprites.logo1.y + this.y + 0);
+				context.lineTo(sprites.logo1.x + this.x + this.width, sprites.logo1.y + this.y + this.height);
+				context.lineTo(sprites.logo1.x + this.x + 0, sprites.logo1.y + this.y + this.height);
+				context.fill();
+			}
+		}
 	};
+
+	function renderSprite(sprite) {
+		if (sprite.render) {
+			sprite.render.bind(sprite)();
+		}
+	}
 
 	(function animate(time) {
 		requestAnimationFrame(animate);
@@ -1033,23 +1115,16 @@ rasterDOM('\n\t<div class="logo" style="font-size: 14px;"></div>\n').then(functi
 			switch (state) {
 				case 'START':
 					clear();
-					context.globalCompositeOperation = 'source-over';
-					context.putImageData(logo.data, sprites.logo.x, sprites.logo.y);
-
-					context.globalCompositeOperation = 'source-atop';
-					context.fillStyle = 'rgba(255,255,255,0.4)';
-					context.beginPath();
-					context.moveTo(sprites.logo.x + sprites.highlight.x + sprites.highlight.width, sprites.logo.y + sprites.highlight.y + 0);
-					context.lineTo(sprites.logo.x + sprites.highlight.x + sprites.highlight.width * 2, sprites.logo.y + sprites.highlight.y + 0);
-					context.lineTo(sprites.logo.x + sprites.highlight.x + sprites.highlight.width, sprites.logo.y + sprites.highlight.y + sprites.highlight.height);
-					context.lineTo(sprites.logo.x + sprites.highlight.x + 0, sprites.logo.y + sprites.highlight.y + sprites.highlight.height);
-					context.fill();
+					renderSprite(sprites.logo1);
+					sprites.logo2.y = sprites.logo1.y + sprites.logo1.height;
+					renderSprite(sprites.logo2);
+					renderSprite(sprites.highlight);
 					break;
 				case 'SPLASH':
 					clear();
-					context.globalCompositeOperation = 'source-over';
-					context.putImageData(sprites.pageSplitTop.data, sprites.pageSplitTop.x, sprites.pageSplitTop.y);
-					context.putImageData(sprites.pageSplitBottom.data, sprites.pageSplitBottom.x, sprites.pageSplitBottom.y);
+					renderSprite(sprites.logo1);
+					renderSprite(sprites.logo2);
+					break;
 			}
 		}
 	})();
@@ -1057,36 +1132,18 @@ rasterDOM('\n\t<div class="logo" style="font-size: 14px;"></div>\n').then(functi
 	new Promise(function (resolve) {
 		return requestAnimationFrame(resolve);
 	}).then(function () {
-		return Promise.all([new TWEEN.Tween(sprites.highlight).delay(1200).to({ x: sprites.logo.width / 2 + sprites.highlight.width * 2 }, 1000).easing(TWEEN.Easing.Quadratic.InOut).onUpdate(function () {
+		return Promise.all([new TWEEN.Tween(sprites.highlight).delay(1200).to({ x: sprites.logo1.width / 2 + sprites.highlight.width * 2 }, 1000).easing(TWEEN.Easing.Quadratic.InOut).onUpdate(function () {
 			return stale = true;
-		}).start(), new TWEEN.Tween(sprites.logo).to({ y: (h - sprites.logo.height) / 2 }, 2000).easing(TWEEN.Easing.Elastic.Out).onUpdate(function () {
+		}).start(), new TWEEN.Tween(sprites.logo1).to({ y: (h - sprites.logo1.height) / 2 }, 2000).easing(TWEEN.Easing.Elastic.Out).onUpdate(function () {
 			return stale = true;
 		}).start()].map(function (t) {
 			return tweenPromise(t);
 		}));
 	}).then(function () {
 		state = states[1];
-		var splitPos = Math.floor(sprites.logo.y + sprites.logo.height * 0.4);
-		var data1 = context.getImageData(0, 0, w, splitPos);
-		var data2 = context.getImageData(0, splitPos, w, h - splitPos);
-		sprites.pageSplitTop = {
-			data: data1,
-			width: w,
-			height: splitPos,
-			x: 0,
-			y: 0
-		};
-		sprites.pageSplitBottom = {
-			data: data2,
-			width: w,
-			height: h - splitPos,
-			x: 0,
-			y: splitPos
-		};
-
-		return Promise.all([new TWEEN.Tween(sprites.pageSplitTop).to({ y: -sprites.pageSplitTop.height }, 1000).easing(TWEEN.Easing.Quadratic.Out).onUpdate(function () {
+		return Promise.all([new TWEEN.Tween(sprites.logo1).to({ y: -sprites.logo1.height }, 1000).easing(TWEEN.Easing.Quadratic.Out).onUpdate(function () {
 			return stale = true;
-		}).start(), new TWEEN.Tween(sprites.pageSplitBottom).to({ y: h }, 1000).easing(TWEEN.Easing.Quadratic.Out).onUpdate(function () {
+		}).start(), new TWEEN.Tween(sprites.logo2).to({ y: h }, 1000).easing(TWEEN.Easing.Quadratic.Out).onUpdate(function () {
 			return stale = true;
 		}).start()].map(tweenPromise));
 	});

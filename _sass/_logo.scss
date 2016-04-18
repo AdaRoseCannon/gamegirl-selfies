@@ -8,19 +8,23 @@
 	height: 2em;
 	font-size: 1.3em;
 
-	&:before {
-		content: "GAME GIRL";
+	&:before,&:after {
 		float: left;
 		white-space: nowrap;
 		clear: both;
+
+		&:empty {
+			display: none;
+		}
+	}
+
+	&:before {
+		content: attr(data-first);
 	}
 
 	&:after {
 		color: #CE6073;
 		font-size: 1.4em;
-		content: "SELFIES";
-		white-space: nowrap;
-		float: left;
-		clear: both;
+		content: attr(data-second);
 	}
 }
