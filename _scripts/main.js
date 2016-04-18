@@ -99,7 +99,7 @@ function rasterDOM(dom) {
 				}
 			}
 
-			const width = pix.x[1] - pix.x[0];
+			const width = pix.x[1] - pix.x[0] + 1;
 			const height = pix.y[1] - pix.y[0] + 1;
 			const data = bufferContext.getImageData(pix.x[0], pix.y[0], width, height);
 			bufferContext.clearRect(0,0,w,h);
@@ -161,6 +161,7 @@ Promise.all([
 		requestAnimationFrame(animate);
 		TWEEN.update(time);
 		if (stale) {
+			stale = false;
 			switch (state) {
 				case 'START':
 					clear();
@@ -173,6 +174,7 @@ Promise.all([
 					clear();
 					renderSprite(sprites.logo1);
 					renderSprite(sprites.logo2);
+					renderSprite(sprites.text);
 					break;
 			}
 		}
@@ -186,16 +188,21 @@ Promise.all([
 				.to({ x: sprites.logo1.width/2 + sprites.highlight.width*2 }, 1000)
 				.easing(TWEEN.Easing.Quadratic.InOut)
 				.onUpdate(() => stale = true)
-				.start(),
-
+				.start()
+			,
 			new TWEEN.Tween(sprites.logo1)
 				.to({ y: (h - sprites.logo1.height)/2 }, 2000)
 				.easing(TWEEN.Easing.Elastic.Out)
 				.onUpdate(() => stale = true)
 				.start()
-		].map(t => tweenPromise(t)));
+			]
+			.map(tweenPromise)
+			.concat(rasterDOM('<span>Hello <b>World</b></span>'))
+		);
 	})
-	.then(function () {
+	.then(function ([a,b,text]) {
+		console.log(text);
+		sprites.text = text;
 		state = states[1];
 		return Promise.all([
 			new TWEEN.Tween(sprites.logo1)
@@ -208,7 +215,8 @@ Promise.all([
 			.easing(TWEEN.Easing.Quadratic.Out)
 			.onUpdate(() => stale = true)
 			.start()
-		].map(tweenPromise));
+		]
+		.map(tweenPromise));
 	});
 });
 

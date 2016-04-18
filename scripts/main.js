@@ -1046,7 +1046,7 @@ function rasterDOM(dom) {
 					}
 				}
 
-				var width = pix.x[1] - pix.x[0];
+				var width = pix.x[1] - pix.x[0] + 1;
 				var height = pix.y[1] - pix.y[0] + 1;
 				var data = bufferContext.getImageData(pix.x[0], pix.y[0], width, height);
 				bufferContext.clearRect(0, 0, w, h);
@@ -1112,6 +1112,7 @@ Promise.all([rasterDOM('<div class="logo" data-first="GAMEGIRL" style="font-size
 		requestAnimationFrame(animate);
 		TWEEN.update(time);
 		if (stale) {
+			stale = false;
 			switch (state) {
 				case 'START':
 					clear();
@@ -1124,6 +1125,7 @@ Promise.all([rasterDOM('<div class="logo" data-first="GAMEGIRL" style="font-size
 					clear();
 					renderSprite(sprites.logo1);
 					renderSprite(sprites.logo2);
+					renderSprite(sprites.text);
 					break;
 			}
 		}
@@ -1136,10 +1138,16 @@ Promise.all([rasterDOM('<div class="logo" data-first="GAMEGIRL" style="font-size
 			return stale = true;
 		}).start(), new TWEEN.Tween(sprites.logo1).to({ y: (h - sprites.logo1.height) / 2 }, 2000).easing(TWEEN.Easing.Elastic.Out).onUpdate(function () {
 			return stale = true;
-		}).start()].map(function (t) {
-			return tweenPromise(t);
-		}));
-	}).then(function () {
+		}).start()].map(tweenPromise).concat(rasterDOM('<span>Hello <b>World</b></span>')));
+	}).then(function (_ref3) {
+		var _ref4 = babelHelpers.slicedToArray(_ref3, 3);
+
+		var a = _ref4[0];
+		var b = _ref4[1];
+		var text = _ref4[2];
+
+		console.log(text);
+		sprites.text = text;
 		state = states[1];
 		return Promise.all([new TWEEN.Tween(sprites.logo1).to({ y: -sprites.logo1.height }, 1000).easing(TWEEN.Easing.Quadratic.Out).onUpdate(function () {
 			return stale = true;
