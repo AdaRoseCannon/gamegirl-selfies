@@ -1002,15 +1002,42 @@ function initContext(canvas) {
 	return context;
 }
 
-function clear() {
-	context.clearRect(0, 0, domWidth / 3, domHeight / 3);
+function fill(fillStyle, composite) {
+	context.globalCompositeOperation = composite || 'source-over';
+	context.rect(0, 0, w, h);
+	var oldFillStyle = context.fillStyle;
+	context.fillStyle = fillStyle;
+	context.fill();
+	context.fillStyle = oldFillStyle;
+}
+
+function clear(fillStyle) {
+	context.clearRect(0, 0, w, h);
+	if (fillStyle) fill(fillStyle);
 }
 
 function renderData(composite) {
 	if (this.data) {
+		if (!this.__buffer) {
+			var buffer = new Buffer(this.width, this.height);
+			buffer.context.putImageData(this.data, 0, 0);
+			this.___buffer = buffer;
+		}
 		context.globalCompositeOperation = composite || 'source-over';
-		context.putImageData(this.data, this.x, this.y);
+		context.drawImage(this.___buffer, this.x, this.y);
 	}
+}
+
+function Buffer() {
+	var width = arguments.length <= 0 || arguments[0] === undefined ? w : arguments[0];
+	var height = arguments.length <= 1 || arguments[1] === undefined ? h : arguments[1];
+
+	var tempCanvas = document.createElement('canvas');
+	tempCanvas.width = width;
+	tempCanvas.height = height;
+	var context = tempCanvas.getContext('2d');
+	tempCanvas.context = context;
+	return tempCanvas;
 }
 
 function rasterDOM(dom) {
@@ -1115,14 +1142,14 @@ Promise.all([rasterDOM('<div class="logo" data-first="GAMEGIRL" style="font-size
 			stale = false;
 			switch (state) {
 				case 'START':
-					clear();
+					clear('lavenderblush');
 					renderSprite(sprites.logo1);
 					sprites.logo2.y = sprites.logo1.y + sprites.logo1.height;
 					renderSprite(sprites.logo2);
 					renderSprite(sprites.highlight);
 					break;
 				case 'SPLASH':
-					clear();
+					clear('lavenderblush');
 					renderSprite(sprites.logo1);
 					renderSprite(sprites.logo2);
 					renderSprite(sprites.text);
@@ -1139,14 +1166,8 @@ Promise.all([rasterDOM('<div class="logo" data-first="GAMEGIRL" style="font-size
 		}).start(), new TWEEN.Tween(sprites.logo1).to({ y: (h - sprites.logo1.height) / 2 }, 2000).easing(TWEEN.Easing.Elastic.Out).onUpdate(function () {
 			return stale = true;
 		}).start()].map(tweenPromise).concat(rasterDOM('<span>Hello <b>World</b></span>')));
-	}).then(function (_ref3) {
-		var _ref4 = babelHelpers.slicedToArray(_ref3, 3);
-
-		var a = _ref4[0];
-		var b = _ref4[1];
-		var text = _ref4[2];
-
-		console.log(text);
+	}).then(function (detail) {
+		var text = detail[2];
 		sprites.text = text;
 		state = states[1];
 		return Promise.all([new TWEEN.Tween(sprites.logo1).to({ y: -sprites.logo1.height }, 1000).easing(TWEEN.Easing.Quadratic.Out).onUpdate(function () {
