@@ -943,31 +943,101 @@ TWEEN.Interpolation = {
 
 var TWEEN = (Tween && typeof Tween === 'object' && 'default' in Tween ? Tween['default'] : Tween);
 
+var w$2 = void 0;
+var h$2 = void 0;
+var context$1 = void 0;
+
+function init$1(o) {
+	w$2 = o.width;
+	h$2 = o.height;
+	context$1 = o.context;
+}
+
+function static_initContext(canvas) {
+	var context = canvas.getContext('2d');
+	context.mozImageSmoothingEnabled = false;
+	context.webkitImageSmoothingEnabled = false;
+	context.msImageSmoothingEnabled = false;
+	context.imageSmoothingEnabled = false;
+	return context;
+}
+
+function fill(fillStyle, composite) {
+	context$1.globalCompositeOperation = composite || 'source-over';
+	context$1.rect(0, 0, w$2, h$2);
+	var oldFillStyle = context$1.fillStyle;
+	context$1.fillStyle = fillStyle;
+	context$1.fill();
+	context$1.fillStyle = oldFillStyle;
+}
+
+function clear(fillStyle) {
+	context$1.clearRect(0, 0, w$2, h$2);
+	if (fillStyle) fill(fillStyle);
+}
+
+function renderData() {
+	var _ref = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+
+	var composite = _ref.composite;
+	var _ref$ctx = _ref.ctx;
+	var ctx = _ref$ctx === undefined ? context$1 : _ref$ctx;
+
+	if (this.data) {
+		if (!this.__buffer) {
+			var buffer = new Buffer(this.width, this.height);
+			buffer.context.putImageData(this.data, 0, 0);
+			this.___buffer = buffer;
+		}
+		ctx.globalCompositeOperation = composite || 'source-over';
+		ctx.drawImage(this.___buffer, this.x, this.y);
+	}
+}
+
+function Buffer() {
+	var width = arguments.length <= 0 || arguments[0] === undefined ? w$2 : arguments[0];
+	var height = arguments.length <= 1 || arguments[1] === undefined ? h$2 : arguments[1];
+
+	var tempCanvas = document.createElement('canvas');
+	tempCanvas.width = width;
+	tempCanvas.height = height;
+	var context = tempCanvas.getContext('2d');
+	tempCanvas.context = context;
+	return tempCanvas;
+}
+
+function grabArea(x, y, width, height) {
+	var data = context$1.getImageData(x, y, width, height);
+	return {
+		data: data,
+		width: width, height: height,
+		x: x, y: y,
+		render: renderData
+	};
+}
+
 var svg = document.getElementById('svg-to-raster');
-var rasterTarget = svg.querySelector('svg div');
-var canvas = document.getElementById('render-target');
-var domWidth = canvas.clientWidth - canvas.clientWidth % 3;
-var domHeight = canvas.clientHeight - canvas.clientHeight % 3;
 var offscreenCanvas = document.createElement('canvas');
+var bufferContext = static_initContext(offscreenCanvas);
+var rasterTarget = svg.querySelector('svg div');
 var b64Start = 'data:image/svg+xml;base64,';
-
-var w = domWidth / 3;
-var h = domHeight / 3;
 var serializer = new XMLSerializer();
+var w$1 = void 0;
+var h$1 = void 0;
+var hasInit = false;
 
-canvas.style.flexGrow = 0;
-canvas.style.flexShrink = 0;
-canvas.style.alignSelf = 'center';
-canvas.style.width = domWidth + 'px';
-canvas.style.height = domHeight + 'px';
-offscreenCanvas.width = canvas.width = w;
-offscreenCanvas.height = canvas.height = h;
-svg.setAttribute('width', w);
-svg.setAttribute('height', h);
+function init(_ref) {
+	var width = _ref.width;
+	var height = _ref.height;
 
-var bufferContext = initContext(offscreenCanvas);
-var context = initContext(canvas);
-var renderPromise = Promise.resolve();
+	w$1 = width;
+	h$1 = height;
+	offscreenCanvas.width = w$1;
+	offscreenCanvas.height = h$1;
+	svg.setAttribute('width', w$1);
+	svg.setAttribute('height', h$1);
+	hasInit = true;
+}
 
 var stylePromise = function updateStyle() {
 	var p = [].slice.call(svg.querySelectorAll('link'));
@@ -992,56 +1062,10 @@ var stylePromise = function updateStyle() {
 		});
 	}));
 }();
-
-function initContext(canvas) {
-	var context = canvas.getContext('2d');
-	context.mozImageSmoothingEnabled = false;
-	context.webkitImageSmoothingEnabled = false;
-	context.msImageSmoothingEnabled = false;
-	context.imageSmoothingEnabled = false;
-	return context;
-}
-
-function fill(fillStyle, composite) {
-	context.globalCompositeOperation = composite || 'source-over';
-	context.rect(0, 0, w, h);
-	var oldFillStyle = context.fillStyle;
-	context.fillStyle = fillStyle;
-	context.fill();
-	context.fillStyle = oldFillStyle;
-}
-
-function clear(fillStyle) {
-	context.clearRect(0, 0, w, h);
-	if (fillStyle) fill(fillStyle);
-}
-
-function renderData(composite) {
-	if (this.data) {
-		if (!this.__buffer) {
-			var buffer = new Buffer(this.width, this.height);
-			buffer.context.putImageData(this.data, 0, 0);
-			this.___buffer = buffer;
-		}
-		context.globalCompositeOperation = composite || 'source-over';
-		context.drawImage(this.___buffer, this.x, this.y);
-	}
-}
-
-function Buffer() {
-	var width = arguments.length <= 0 || arguments[0] === undefined ? w : arguments[0];
-	var height = arguments.length <= 1 || arguments[1] === undefined ? h : arguments[1];
-
-	var tempCanvas = document.createElement('canvas');
-	tempCanvas.width = width;
-	tempCanvas.height = height;
-	var context = tempCanvas.getContext('2d');
-	tempCanvas.context = context;
-	return tempCanvas;
-}
+var renderPromise = Promise.resolve();
 
 function rasterDOM(dom) {
-
+	if (!hasInit) throw Error('Need to init svg-render with width and height');
 	renderPromise = renderPromise.then(function () {
 		return stylePromise;
 	}).then(function () {
@@ -1055,15 +1079,21 @@ function rasterDOM(dom) {
 
 			var image64 = b64Start + btoa(serializer.serializeToString(svg));
 			var bufferImg = document.createElement('img');
+			bufferImg.onload = readyLoad;
 			bufferImg.src = image64;
-			bufferImg.onload = function load() {
-				var pix = { x: [w, 0], y: [h, 0] };
-				bufferContext.clearRect(0, 0, w, h);
+			function readyLoad() {
+
+				// hack it needs time to load the font
+				setTimeout(load, 32);
+			}
+			function load() {
+				var pix = { x: [w$1, 0], y: [h$1, 0] };
+				bufferContext.clearRect(0, 0, w$1, h$1);
 				bufferContext.drawImage(bufferImg, 0, 0);
-				var imageData = bufferContext.getImageData(0, 0, w, h);
-				for (var y = 0; y < h; y++) {
-					for (var x = 0; x < w; x++) {
-						var index = (y * w + x) * 4;
+				var imageData = bufferContext.getImageData(0, 0, w$1, h$1);
+				for (var y = 0; y < h$1; y++) {
+					for (var x = 0; x < w$1; x++) {
+						var index = (y * w$1 + x) * 4;
 						if (imageData.data[index + 3] !== 0) {
 							if (x < pix.x[0]) pix.x[0] = x;
 							if (y < pix.y[0]) pix.y[0] = y;
@@ -1076,9 +1106,7 @@ function rasterDOM(dom) {
 				var width = pix.x[1] - pix.x[0] + 1;
 				var height = pix.y[1] - pix.y[0] + 1;
 				var data = bufferContext.getImageData(pix.x[0], pix.y[0], width, height);
-				bufferContext.clearRect(0, 0, w, h);
-
-				rasterTarget.innerHTML = '';
+				bufferContext.clearRect(0, 0, w$1, h$1);
 				resolve({
 					data: data,
 					width: width,
@@ -1093,6 +1121,29 @@ function rasterDOM(dom) {
 
 	return renderPromise;
 }
+
+var canvas = document.getElementById('render-target');
+var domWidth = canvas.clientWidth - canvas.clientWidth % 3;
+var domHeight = canvas.clientHeight - canvas.clientHeight % 3;
+
+var w = domWidth / 3;
+var h = domHeight / 3;
+
+canvas.style.flexGrow = 0;
+canvas.style.flexShrink = 0;
+canvas.style.alignSelf = 'center';
+canvas.style.width = domWidth + 'px';
+canvas.style.height = domHeight + 'px';
+canvas.width = w;
+canvas.height = h;
+
+var context = static_initContext(canvas);
+
+(function init$$() {
+	var initOptions = { width: w, height: h, context: context };
+	init(initOptions);
+	init$1(initOptions);
+})();
 
 function tweenPromise(tween) {
 	return new Promise(function (resolve) {
@@ -1117,21 +1168,26 @@ Promise.all([rasterDOM('<div class="logo" data-first="GAMEGIRL" style="font-size
 		logo1: logo1,
 		logo2: logo2,
 		highlight: { x: -30 - logo1.width / 2, y: -10, width: 15, height: 60, render: function render() {
-				context.globalCompositeOperation = 'source-atop';
-				context.fillStyle = 'rgba(255,255,255,0.4)';
-				context.beginPath();
-				context.moveTo(sprites.logo1.x + this.x + this.width, sprites.logo1.y + this.y + 0);
-				context.lineTo(sprites.logo1.x + this.x + this.width * 2, sprites.logo1.y + this.y + 0);
-				context.lineTo(sprites.logo1.x + this.x + this.width, sprites.logo1.y + this.y + this.height);
-				context.lineTo(sprites.logo1.x + this.x + 0, sprites.logo1.y + this.y + this.height);
-				context.fill();
+				var _ref3 = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+
+				var _ref3$ctx = _ref3.ctx;
+				var ctx = _ref3$ctx === undefined ? context : _ref3$ctx;
+
+				ctx.globalCompositeOperation = 'source-atop';
+				ctx.fillStyle = 'rgba(255,255,255,0.4)';
+				ctx.beginPath();
+				ctx.moveTo(sprites.logo1.x + this.x + this.width, sprites.logo1.y + this.y + 0);
+				ctx.lineTo(sprites.logo1.x + this.x + this.width * 2, sprites.logo1.y + this.y + 0);
+				ctx.lineTo(sprites.logo1.x + this.x + this.width, sprites.logo1.y + this.y + this.height);
+				ctx.lineTo(sprites.logo1.x + this.x + 0, sprites.logo1.y + this.y + this.height);
+				ctx.fill();
 			}
 		}
 	};
 
-	function renderSprite(sprite) {
+	function renderSprite(sprite, options) {
 		if (sprite.render) {
-			sprite.render.bind(sprite)();
+			sprite.render.bind(sprite)(options);
 		}
 	}
 
@@ -1149,10 +1205,10 @@ Promise.all([rasterDOM('<div class="logo" data-first="GAMEGIRL" style="font-size
 					renderSprite(sprites.highlight);
 					break;
 				case 'SPLASH':
-					clear('lavenderblush');
-					renderSprite(sprites.logo1);
-					renderSprite(sprites.logo2);
+					clear();
 					renderSprite(sprites.text);
+					renderSprite(sprites.pageSplitTop);
+					renderSprite(sprites.pageSplitBottom);
 					break;
 			}
 		}
@@ -1165,14 +1221,24 @@ Promise.all([rasterDOM('<div class="logo" data-first="GAMEGIRL" style="font-size
 			return stale = true;
 		}).start(), new TWEEN.Tween(sprites.logo1).to({ y: (h - sprites.logo1.height) / 2 }, 2000).easing(TWEEN.Easing.Elastic.Out).onUpdate(function () {
 			return stale = true;
-		}).start()].map(tweenPromise).concat(rasterDOM('<span>Hello <b>World</b></span>')));
+		}).start()].map(tweenPromise).concat(rasterDOM('<span>Swipe<span style="font-weight: bold;">Swipe</span></span>')));
 	}).then(function (detail) {
-		var text = detail[2];
-		sprites.text = text;
 		state = states[1];
-		return Promise.all([new TWEEN.Tween(sprites.logo1).to({ y: -sprites.logo1.height }, 1000).easing(TWEEN.Easing.Quadratic.Out).onUpdate(function () {
+
+		var splitPos = Math.floor(sprites.logo1.y + sprites.logo1.height + 1);
+		sprites.pageSplitTop = grabArea(0, 0, w, splitPos);
+		sprites.pageSplitBottom = grabArea(0, splitPos, w, h - splitPos);
+
+		var text = detail[2];
+		console.log(text);
+		sprites.text = text;
+		text.x = (w - text.width) / 2;
+		text.y = h / 2;
+		console.log(text);
+
+		return Promise.all([new TWEEN.Tween(sprites.pageSplitTop).to({ y: -sprites.pageSplitTop.height }, 1000).easing(TWEEN.Easing.Quadratic.Out).onUpdate(function () {
 			return stale = true;
-		}).start(), new TWEEN.Tween(sprites.logo2).to({ y: h }, 1000).easing(TWEEN.Easing.Quadratic.Out).onUpdate(function () {
+		}).start(), new TWEEN.Tween(sprites.pageSplitBottom).to({ y: h }, 1000).easing(TWEEN.Easing.Quadratic.Out).onUpdate(function () {
 			return stale = true;
 		}).start()].map(tweenPromise));
 	});
