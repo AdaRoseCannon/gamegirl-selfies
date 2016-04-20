@@ -2,7 +2,7 @@
 
 import TWEEN from 'tween.js';
 import {init as initSVGRender, rasterDOM} from './libs/canvas/svg-render';
-import {static_initContext, init as initUtils, clear, grabArea} from './libs/canvas/utils';
+import {static_initContext, init as initUtils, clear, grabArea, Buffer} from './libs/canvas/utils';
 
 const canvas = document.getElementById('render-target');
 const domWidth = canvas.clientWidth - (canvas.clientWidth % 3);
@@ -47,7 +47,8 @@ Promise.all([
 	const sprites = {
 		logo1,
 		logo2,
-		highlight: { x: -30 - logo1.width/2, y: -10, width: 15, height: 60, render({ctx = context} = {}) {
+		highlight: { x: -30 - logo1.width/2, y: -10, width: 15, height: 60, render(options = {}) {
+			const ctx = options.context || context;
 			ctx.globalCompositeOperation = 'source-atop';
 			ctx.fillStyle = 'rgba(255,255,255,0.4)';
 			ctx.beginPath();
@@ -59,12 +60,17 @@ Promise.all([
 		} }
 	};
 
-	function renderSprite(sprite, options) {
+	const renderSpriteFn = function renderSprite(sprite, options = {}) {
+		options.context = this;
 		if (sprite.render) {
 			sprite.render.bind(sprite)(options);
 		}
-	}
+	};
 
+	const renderSprite = renderSpriteFn.bind(context);
+
+	const buffer1 = new Buffer();
+	const bufferRender = renderSpriteFn.bind(buffer1.context);
 	(function animate(time) {
 		requestAnimationFrame(animate);
 		TWEEN.update(time);
@@ -72,14 +78,16 @@ Promise.all([
 			stale = false;
 			switch (state) {
 				case 'START':
-					clear('lavenderblush');
-					renderSprite(sprites.logo1);
+					clear('#C9CAC9');
+					clear(undefined, {context: buffer1.context});
+					bufferRender(sprites.logo1);
 					sprites.logo2.y = sprites.logo1.y + sprites.logo1.height;
-					renderSprite(sprites.logo2);
-					renderSprite(sprites.highlight);
+					bufferRender(sprites.logo2);
+					bufferRender(sprites.highlight);
+					context.drawImage(buffer1, 0, 0);
 					break;
 				case 'SPLASH':
-					clear();
+					clear('lavenderblush');
 					renderSprite(sprites.text);
 					renderSprite(sprites.pageSplitTop);
 					renderSprite(sprites.pageSplitBottom);
@@ -105,7 +113,7 @@ Promise.all([
 				.start()
 			]
 			.map(tweenPromise)
-			.concat(rasterDOM('<span>Swipe<span style="font-weight: bold;">Swipe</span></span>'))
+			.concat(rasterDOM('<span class="swipe">&lt; SWIPE &gt;</span>'))
 		);
 	})
 	.then(function (detail) {
@@ -116,11 +124,9 @@ Promise.all([
 		sprites.pageSplitBottom = grabArea(0, splitPos, w, h - splitPos);
 
 		const text = detail[2];
-		console.log(text);
 		sprites.text = text;
 		text.x = (w - text.width) / 2;
 		text.y = h / 2;
-		console.log(text);
 
 		return Promise.all([
 			new TWEEN.Tween(sprites.pageSplitTop)

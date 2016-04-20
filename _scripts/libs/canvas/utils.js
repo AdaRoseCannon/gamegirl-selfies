@@ -17,28 +17,30 @@ function static_initContext(canvas) {
 	return context;
 }
 
-function fill(fillStyle, composite) {
-	context.globalCompositeOperation = composite || 'source-over';
-	context.rect(0, 0, w, h);
-	const oldFillStyle = context.fillStyle;
-	context.fillStyle = fillStyle;
-	context.fill();
-	context.fillStyle = oldFillStyle;
+function fill(fillStyle, options = {}) {
+	const ctx = (options.context || context);
+	ctx.globalCompositeOperation = options.composite || 'source-over';
+	ctx.rect(0, 0, w, h);
+	const oldFillStyle = ctx.fillStyle;
+	ctx.fillStyle = fillStyle;
+	ctx.fill();
+	ctx.fillStyle = oldFillStyle;
 }
 
-function clear(fillStyle) {
-	context.clearRect(0, 0, w, h);
+function clear(fillStyle, options = {}) {
+	(options.context || context).clearRect(0, 0, w, h);
 	if (fillStyle) fill(fillStyle);
 }
 
-function renderData({composite, ctx = context} = {}) {
+function renderData(options = {}) {
+	const ctx = options.context || context;
 	if (this.data) {
 		if (!this.__buffer) {
 			const buffer = new Buffer(this.width, this.height);
 			buffer.context.putImageData(this.data, 0,0);
 			this.___buffer = buffer;
 		}
-		ctx.globalCompositeOperation = composite || 'source-over';
+		ctx.globalCompositeOperation = options.composite || 'source-over';
 		ctx.drawImage(this.___buffer, this.x, this.y);
 	}
 }
@@ -47,8 +49,7 @@ function Buffer(width = w, height = h) {
 	const tempCanvas = document.createElement('canvas');
 	tempCanvas.width = width;
 	tempCanvas.height = height;
-	const context = tempCanvas.getContext('2d');
-	tempCanvas.context = context;
+	tempCanvas.context = tempCanvas.getContext('2d');
 	return tempCanvas;
 }
 

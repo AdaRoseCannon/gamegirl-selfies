@@ -962,34 +962,36 @@ function static_initContext(canvas) {
 	return context;
 }
 
-function fill(fillStyle, composite) {
-	context$1.globalCompositeOperation = composite || 'source-over';
-	context$1.rect(0, 0, w$2, h$2);
-	var oldFillStyle = context$1.fillStyle;
-	context$1.fillStyle = fillStyle;
-	context$1.fill();
-	context$1.fillStyle = oldFillStyle;
+function fill(fillStyle) {
+	var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+
+	var ctx = options.context || context$1;
+	ctx.globalCompositeOperation = options.composite || 'source-over';
+	ctx.rect(0, 0, w$2, h$2);
+	var oldFillStyle = ctx.fillStyle;
+	ctx.fillStyle = fillStyle;
+	ctx.fill();
+	ctx.fillStyle = oldFillStyle;
 }
 
 function clear(fillStyle) {
-	context$1.clearRect(0, 0, w$2, h$2);
+	var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+
+	(options.context || context$1).clearRect(0, 0, w$2, h$2);
 	if (fillStyle) fill(fillStyle);
 }
 
 function renderData() {
-	var _ref = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+	var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
 
-	var composite = _ref.composite;
-	var _ref$ctx = _ref.ctx;
-	var ctx = _ref$ctx === undefined ? context$1 : _ref$ctx;
-
+	var ctx = options.context || context$1;
 	if (this.data) {
 		if (!this.__buffer) {
 			var buffer = new Buffer(this.width, this.height);
 			buffer.context.putImageData(this.data, 0, 0);
 			this.___buffer = buffer;
 		}
-		ctx.globalCompositeOperation = composite || 'source-over';
+		ctx.globalCompositeOperation = options.composite || 'source-over';
 		ctx.drawImage(this.___buffer, this.x, this.y);
 	}
 }
@@ -1001,8 +1003,7 @@ function Buffer() {
 	var tempCanvas = document.createElement('canvas');
 	tempCanvas.width = width;
 	tempCanvas.height = height;
-	var context = tempCanvas.getContext('2d');
-	tempCanvas.context = context;
+	tempCanvas.context = tempCanvas.getContext('2d');
 	return tempCanvas;
 }
 
@@ -1168,11 +1169,9 @@ Promise.all([rasterDOM('<div class="logo" data-first="GAMEGIRL" style="font-size
 		logo1: logo1,
 		logo2: logo2,
 		highlight: { x: -30 - logo1.width / 2, y: -10, width: 15, height: 60, render: function render() {
-				var _ref3 = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+				var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
 
-				var _ref3$ctx = _ref3.ctx;
-				var ctx = _ref3$ctx === undefined ? context : _ref3$ctx;
-
+				var ctx = options.context || context;
 				ctx.globalCompositeOperation = 'source-atop';
 				ctx.fillStyle = 'rgba(255,255,255,0.4)';
 				ctx.beginPath();
@@ -1185,12 +1184,19 @@ Promise.all([rasterDOM('<div class="logo" data-first="GAMEGIRL" style="font-size
 		}
 	};
 
-	function renderSprite(sprite, options) {
+	var renderSpriteFn = function renderSprite(sprite) {
+		var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+
+		options.context = this;
 		if (sprite.render) {
 			sprite.render.bind(sprite)(options);
 		}
-	}
+	};
 
+	var renderSprite = renderSpriteFn.bind(context);
+
+	var buffer1 = new Buffer();
+	var bufferRender = renderSpriteFn.bind(buffer1.context);
 	(function animate(time) {
 		requestAnimationFrame(animate);
 		TWEEN.update(time);
@@ -1198,14 +1204,16 @@ Promise.all([rasterDOM('<div class="logo" data-first="GAMEGIRL" style="font-size
 			stale = false;
 			switch (state) {
 				case 'START':
-					clear('lavenderblush');
-					renderSprite(sprites.logo1);
+					clear('#C9CAC9');
+					clear(undefined, { context: buffer1.context });
+					bufferRender(sprites.logo1);
 					sprites.logo2.y = sprites.logo1.y + sprites.logo1.height;
-					renderSprite(sprites.logo2);
-					renderSprite(sprites.highlight);
+					bufferRender(sprites.logo2);
+					bufferRender(sprites.highlight);
+					context.drawImage(buffer1, 0, 0);
 					break;
 				case 'SPLASH':
-					clear();
+					clear('lavenderblush');
 					renderSprite(sprites.text);
 					renderSprite(sprites.pageSplitTop);
 					renderSprite(sprites.pageSplitBottom);
@@ -1221,7 +1229,7 @@ Promise.all([rasterDOM('<div class="logo" data-first="GAMEGIRL" style="font-size
 			return stale = true;
 		}).start(), new TWEEN.Tween(sprites.logo1).to({ y: (h - sprites.logo1.height) / 2 }, 2000).easing(TWEEN.Easing.Elastic.Out).onUpdate(function () {
 			return stale = true;
-		}).start()].map(tweenPromise).concat(rasterDOM('<span>Swipe<span style="font-weight: bold;">Swipe</span></span>')));
+		}).start()].map(tweenPromise).concat(rasterDOM('<span class="swipe">&lt; SWIPE &gt;</span>')));
 	}).then(function (detail) {
 		state = states[1];
 
@@ -1230,11 +1238,9 @@ Promise.all([rasterDOM('<div class="logo" data-first="GAMEGIRL" style="font-size
 		sprites.pageSplitBottom = grabArea(0, splitPos, w, h - splitPos);
 
 		var text = detail[2];
-		console.log(text);
 		sprites.text = text;
 		text.x = (w - text.width) / 2;
 		text.y = h / 2;
-		console.log(text);
 
 		return Promise.all([new TWEEN.Tween(sprites.pageSplitTop).to({ y: -sprites.pageSplitTop.height }, 1000).easing(TWEEN.Easing.Quadratic.Out).onUpdate(function () {
 			return stale = true;
