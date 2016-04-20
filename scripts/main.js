@@ -1225,7 +1225,7 @@ Promise.all([rasterDOM('<div class="logo" data-first="GAMEGIRL" style="font-size
 	}).then(function (detail) {
 		state = states[1];
 
-		var splitPos = Math.floor(sprites.logo1.y + sprites.logo1.height + 1);
+		var splitPos = Math.floor(sprites.logo1.y + sprites.logo1.height);
 		sprites.pageSplitTop = grabArea(0, 0, w, splitPos);
 		sprites.pageSplitBottom = grabArea(0, splitPos, w, h - splitPos);
 
