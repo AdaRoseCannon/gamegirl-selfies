@@ -111,7 +111,7 @@ Promise.all([
 	.then(function (detail) {
 		state = states[1];
 
-		const splitPos = Math.floor(sprites.logo1.y + sprites.logo1.height + 1);
+		const splitPos = Math.floor(sprites.logo1.y + sprites.logo1.height);
 		sprites.pageSplitTop = grabArea(0, 0, w, splitPos);
 		sprites.pageSplitBottom = grabArea(0, splitPos, w, h - splitPos);
 
