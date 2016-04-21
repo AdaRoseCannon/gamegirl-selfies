@@ -3558,16 +3558,8 @@ function renderData() {
 	var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
 
 	var ctx = options.context || context$1;
-	if (this.data || this.__buffer) {
-		if (!this.__buffer) {
-			var buffer = new Buffer(this.width, this.height);
-			buffer.context.putImageData(this.data, 0, 0);
-			this.__buffer = buffer;
-			delete this.data;
-		}
-		ctx.globalCompositeOperation = options.composite || 'source-over';
-		ctx.drawImage(this.__buffer, this.x + (this.dx || 0), this.y + (this.dy || 0));
-	}
+	ctx.globalCompositeOperation = options.composite || 'source-over';
+	ctx.drawImage(this.buffer, this.x + (this.dx || 0), this.y + (this.dy || 0));
 }
 
 function Buffer() {
@@ -3583,8 +3575,10 @@ function Buffer() {
 
 function grabArea(x, y, width, height) {
 	var data = context$1.getImageData(x, y, width, height);
+	var buffer = new Buffer(width, height);
+	buffer.context.putImageData(data, 0, 0);
 	return {
-		data: data,
+		buffer: buffer,
 		width: width, height: height,
 		x: x, y: y,
 		render: renderData
@@ -3682,10 +3676,14 @@ function rasterDOM(dom) {
 				var height = pix.y[1] - pix.y[0] + 1;
 				var data = bufferContext.getImageData(pix.x[0], pix.y[0], width, height);
 				bufferContext.clearRect(0, 0, w$1, h$1);
+
+				var buffer = new Buffer(width, height);
+				buffer.context.putImageData(data, 0, 0);
+
 				resolve({
-					data: data,
 					width: width,
 					height: height,
+					buffer: buffer,
 					x: pix.x[0],
 					y: pix.y[0],
 					render: renderData
@@ -3822,15 +3820,16 @@ Promise.all([rasterDOM('<div class="logo" data-first="GAMEGIRL" style="font-size
 			return stale = true;
 		}).start(), new TWEEN.Tween(sprites.logo1).to({ y: (h - sprites.logo1.height) / 2 }, 2000).easing(TWEEN.Easing.Elastic.Out).onUpdate(function () {
 			return stale = true;
-		}).start()].map(tweenPromise).concat(rasterDOM('<span class="swipe">&lt; SWIPE &gt;</span>')));
-	}).then(function (detail) {
+		}).start()].map(tweenPromise).concat(rasterDOM('<span class="swipe">&lt; SWIPE &gt;</span>'))).then(function (detail) {
+			return detail[3];
+		});
+	}).then(function (text) {
 		state = states[1];
 
 		var splitPos = Math.floor(sprites.logo1.y + sprites.logo1.height);
 		sprites.pageSplitTop = grabArea(0, 0, w, splitPos);
 		sprites.pageSplitBottom = grabArea(0, splitPos, w, h - splitPos);
 
-		var text = detail[2];
 		sprites.text = text;
 		text.x = (w - text.width) / 2;
 		text.y = h / 2;
@@ -3840,6 +3839,11 @@ Promise.all([rasterDOM('<div class="logo" data-first="GAMEGIRL" style="font-size
 		}).start(), new TWEEN.Tween(sprites.pageSplitBottom).to({ y: h }, 1000).easing(TWEEN.Easing.Quadratic.Out).onUpdate(function () {
 			return stale = true;
 		}).start()].map(tweenPromise));
+	}).then(function () {
+		delete sprites.logo1;
+		delete sprites.logo2;
+		delete sprites.pageSplitTop;
+		delete sprites.pageSplitBottom;
 	});
 });
 }());

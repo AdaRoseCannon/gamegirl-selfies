@@ -34,16 +34,8 @@ function clear(fillStyle, options = {}) {
 
 function renderData(options = {}) {
 	const ctx = options.context || context;
-	if (this.data || this.__buffer) {
-		if (!this.__buffer) {
-			const buffer = new Buffer(this.width, this.height);
-			buffer.context.putImageData(this.data, 0,0);
-			this.__buffer = buffer;
-			delete this.data;
-		}
-		ctx.globalCompositeOperation = options.composite || 'source-over';
-		ctx.drawImage(this.__buffer, this.x + (this.dx || 0), this.y + (this.dy || 0));
-	}
+	ctx.globalCompositeOperation = options.composite || 'source-over';
+	ctx.drawImage(this.buffer, this.x + (this.dx || 0), this.y + (this.dy || 0));
 }
 
 function Buffer(width = w, height = h) {
@@ -56,8 +48,10 @@ function Buffer(width = w, height = h) {
 
 function grabArea(x,y,width,height) {
 	const data = context.getImageData(x,y,width,height);
+	const buffer = new Buffer(width, height);
+	buffer.context.putImageData(data, 0,0);
 	return {
-		data,
+		buffer,
 		width, height,
 		x, y,
 		render: renderData

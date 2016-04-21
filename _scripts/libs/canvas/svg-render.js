@@ -1,4 +1,4 @@
-import {renderData, static_initContext} from './utils';
+import {renderData, static_initContext, Buffer} from './utils';
 
 const svg = document.getElementById('svg-to-raster');
 const offscreenCanvas = document.createElement('canvas');
@@ -83,10 +83,14 @@ function rasterDOM(dom) {
 			const height = pix.y[1] - pix.y[0] + 1;
 			const data = bufferContext.getImageData(pix.x[0], pix.y[0], width, height);
 			bufferContext.clearRect(0,0,w,h);
+
+			const buffer = new Buffer(width, height);
+			buffer.context.putImageData(data, 0,0);
+
 			resolve({
-				data,
 				width,
 				height,
+				buffer,
 				x: pix.x[0],
 				y: pix.y[0],
 				render: renderData

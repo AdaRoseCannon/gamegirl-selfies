@@ -136,16 +136,16 @@ Promise.all([
 			]
 			.map(tweenPromise)
 			.concat(rasterDOM('<span class="swipe">&lt; SWIPE &gt;</span>'))
-		);
+		)
+		.then(detail => detail[3]);
 	})
-	.then(function (detail) {
+	.then(function (text) {
 		state = states[1];
 
 		const splitPos = Math.floor(sprites.logo1.y + sprites.logo1.height);
 		sprites.pageSplitTop = grabArea(0, 0, w, splitPos);
 		sprites.pageSplitBottom = grabArea(0, splitPos, w, h - splitPos);
 
-		const text = detail[2];
 		sprites.text = text;
 		text.x = (w - text.width) / 2;
 		text.y = h / 2;
@@ -163,6 +163,12 @@ Promise.all([
 			.start()
 		]
 		.map(tweenPromise));
+	})
+	.then(() => {
+		delete sprites.logo1;
+		delete sprites.logo2;
+		delete sprites.pageSplitTop;
+		delete sprites.pageSplitBottom;
 	});
 });
 
