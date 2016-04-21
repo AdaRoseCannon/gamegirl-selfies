@@ -34,14 +34,15 @@ function clear(fillStyle, options = {}) {
 
 function renderData(options = {}) {
 	const ctx = options.context || context;
-	if (this.data) {
+	if (this.data || this.__buffer) {
 		if (!this.__buffer) {
 			const buffer = new Buffer(this.width, this.height);
 			buffer.context.putImageData(this.data, 0,0);
-			this.___buffer = buffer;
+			this.__buffer = buffer;
+			delete this.data;
 		}
 		ctx.globalCompositeOperation = options.composite || 'source-over';
-		ctx.drawImage(this.___buffer, this.x, this.y);
+		ctx.drawImage(this.__buffer, this.x + (this.dx || 0), this.y + (this.dy || 0));
 	}
 }
 

@@ -1,15 +1,17 @@
 'use strict';
 
+import HAMMER from 'hammerjs';
 import TWEEN from 'tween.js';
 import {init as initSVGRender, rasterDOM} from './libs/canvas/svg-render';
 import {static_initContext, init as initUtils, clear, grabArea, Buffer} from './libs/canvas/utils';
 
+const pixelScale = 3;
 const canvas = document.getElementById('render-target');
-const domWidth = canvas.clientWidth - (canvas.clientWidth % 3);
-const domHeight = canvas.clientHeight - (canvas.clientHeight % 3);
+const domWidth = canvas.clientWidth - (canvas.clientWidth % pixelScale);
+const domHeight = canvas.clientHeight - (canvas.clientHeight % pixelScale);
 
-const w = domWidth/3;
-const h = domHeight/3;
+const w = domWidth/pixelScale;
+const h = domHeight/pixelScale;
 
 canvas.style.flexGrow = 0;
 canvas.style.flexShrink = 0;
@@ -68,6 +70,26 @@ Promise.all([
 	};
 
 	const renderSprite = renderSpriteFn.bind(context);
+	const hammer = new HAMMER(canvas);
+	hammer.on('pan', function(event) {
+		switch (state) {
+			case 'SPLASH':
+				sprites.text.dx = event.deltaX/pixelScale;
+				stale = true;
+				break;
+		}
+    });
+	hammer.on('panend', function() {
+		switch (state) {
+			case 'SPLASH':
+				new TWEEN.Tween(sprites.text)
+				.to({ dx: 0 }, 1000)
+				.easing(TWEEN.Easing.Elastic.Out)
+				.onUpdate(() => stale = true)
+				.start();
+				break;
+		}
+    });
 
 	const buffer1 = new Buffer();
 	const bufferRender = renderSpriteFn.bind(buffer1.context);
