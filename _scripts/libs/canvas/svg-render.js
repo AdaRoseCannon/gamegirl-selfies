@@ -20,10 +20,18 @@ function init({width, height}) {
 	hasInit = true;
 }
 
-const stylePromise = (function updateStyle() {
-	const p = [].slice.call(svg.querySelectorAll('link'));
+function inlineEl(...p) {
 	return Promise.all(p.map(el => {
-		const url = el.href;
+		let attr;
+		let url;
+		url = el.getAttribute('src');
+		if (url) {
+			attr = 'src';
+		} else {
+			url = el.getAttribute('href');
+			attr = 'href';
+		}
+		if (!url) return Promise.reject('No url');
 		return fetch(url)
 		.then(response => response.blob())
 		.then(function (blob) {
@@ -35,10 +43,12 @@ const stylePromise = (function updateStyle() {
 				a.readAsDataURL(blob);
 			});
 		})
-		.then(url => el.setAttribute('href', url))
+		.then(url => el.setAttribute(attr, url))
 		.then(() => new Promise(resolve => setTimeout(resolve, 160)));
 	}));
-}());
+}
+
+const stylePromise = inlineEl(...svg.querySelectorAll('link'));
 let renderPromise = Promise.resolve();
 
 function rasterDOM(dom) {
@@ -103,5 +113,6 @@ function rasterDOM(dom) {
 
 export {
 	init,
-	rasterDOM
+	rasterDOM,
+	inlineEl
 };

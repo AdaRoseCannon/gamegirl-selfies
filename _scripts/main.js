@@ -3,7 +3,13 @@
 import HAMMER from 'hammerjs';
 import TWEEN from 'tween.js';
 import {init as initSVGRender, rasterDOM} from './libs/canvas/svg-render';
-import {static_initContext, init as initUtils, clear, grabArea, Buffer} from './libs/canvas/utils';
+import {
+	static_initContext,
+	init as initUtils,
+	clear, grabArea,
+	Buffer,
+	imageToSprite
+} from './libs/canvas/utils';
 
 const pixelScale = 3;
 const canvas = document.getElementById('render-target');
@@ -136,6 +142,7 @@ Promise.all([
 			]
 			.map(tweenPromise)
 			.concat(rasterDOM('<span class="swipe">&lt; SWIPE &gt;</span>'))
+			.concat(imageToSprite('images/temp.jpg'))
 		)
 		.then(detail => detail[3]);
 	})
@@ -148,7 +155,7 @@ Promise.all([
 
 		sprites.text = text;
 		text.x = (w - text.width) / 2;
-		text.y = h / 2;
+		text.y = Math.max((h - text.height) / 2, 0);
 
 		return Promise.all([
 			new TWEEN.Tween(sprites.pageSplitTop)
@@ -169,6 +176,9 @@ Promise.all([
 		delete sprites.logo2;
 		delete sprites.pageSplitTop;
 		delete sprites.pageSplitBottom;
+	})
+	.catch(e => {
+		throw e;
 	});
 });
 

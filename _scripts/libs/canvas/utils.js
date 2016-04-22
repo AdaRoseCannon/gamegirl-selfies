@@ -58,6 +58,26 @@ function grabArea(x,y,width,height) {
 	};
 }
 
+function imageToSprite(url) {
+	return new Promise(function (resolve, reject) {
+		const image = document.createElement('img');
+		image.onload = function render() {
+			resolve({
+				width: this.width,
+				height: this.height,
+				x: 0,
+				y: 0,
+				buffer: image,
+				render: renderData
+			});
+		};
+		image.onerror = function error(e) {
+			reject(e);
+		};
+		image.src = url;
+	});
+}
+
 export {
 	grabArea,
 	init,
@@ -65,5 +85,6 @@ export {
 	clear,
 	fill,
 	Buffer,
-	renderData
+	renderData,
+	imageToSprite
 };
