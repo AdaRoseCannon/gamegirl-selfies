@@ -77,6 +77,14 @@ Promise.all([
 
 	const renderSprite = renderSpriteFn.bind(context);
 	const hammer = new HAMMER(canvas);
+	const tempVars = {};
+	hammer.on('panstart', function () {
+		switch (state) {
+			case 'SPLASH':
+			if (tempVars.splashTween) tempVars.splashTween.stop();
+			break;
+		}
+	})
 	hammer.on('pan', function(event) {
 		switch (state) {
 			case 'SPLASH':
@@ -88,7 +96,7 @@ Promise.all([
 	hammer.on('panend', function() {
 		switch (state) {
 			case 'SPLASH':
-				new TWEEN.Tween(sprites.text)
+				tempVars.splashTween = new TWEEN.Tween(sprites.text)
 				.to({ dx: 0 }, 1000)
 				.easing(TWEEN.Easing.Elastic.Out)
 				.onUpdate(() => stale = true)
@@ -117,8 +125,10 @@ Promise.all([
 				case 'SPLASH':
 					clear('lavenderblush');
 					renderSprite(sprites.text);
-					renderSprite(sprites.pageSplitTop);
-					renderSprite(sprites.pageSplitBottom);
+					if (sprites.pageSplitTop) {
+						renderSprite(sprites.pageSplitTop);
+						renderSprite(sprites.pageSplitBottom);
+					}
 					break;
 			}
 		}
