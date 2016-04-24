@@ -58,7 +58,7 @@ babelHelpers.toConsumableArray = function (arr) {
 
 babelHelpers;
 
-var hammer = __commonjs(function (module) {
+var hammer$1 = __commonjs(function (module) {
 /*! Hammer.JS - v2.0.6 - 2015-12-23
  * http://hammerjs.github.io/
  *
@@ -2629,7 +2629,7 @@ if (typeof define === 'function' && define.amd) {
 })(window, document, 'Hammer');
 });
 
-var HAMMER = (hammer && typeof hammer === 'object' && 'default' in hammer ? hammer['default'] : hammer);
+var HAMMER = (hammer$1 && typeof hammer$1 === 'object' && 'default' in hammer$1 ? hammer$1['default'] : hammer$1);
 
 var Tween = __commonjs(function (module, exports, global) {
 /**
@@ -3526,6 +3526,21 @@ TWEEN.Interpolation = {
 
 var TWEEN = (Tween && typeof Tween === 'object' && 'default' in Tween ? Tween['default'] : Tween);
 
+function addScript(url) {
+	var p = new Promise(function (resolve, reject) {
+		var script = document.createElement('script');
+		script.setAttribute('src', url);
+		document.head.appendChild(script);
+		script.onload = resolve;
+		script.onerror = reject;
+	});
+	function promiseScript() {
+		return p;
+	};
+	promiseScript.promise = p;
+	return promiseScript;
+}
+
 var w$2 = void 0;
 var h$2 = void 0;
 var context$1 = void 0;
@@ -3687,7 +3702,11 @@ function rasterDOM(dom) {
 			if (typeof dom === 'string') {
 				rasterTarget.innerHTML = dom;
 			} else {
-				rasterTarget.appendChild(dom.clone(true));
+				var newDom = dom.cloneNode(true);
+				if (newDom.style.display === 'none') {
+					newDom.style.display = 'block';
+				}
+				rasterTarget.appendChild(newDom);
 			}
 
 			var image64 = b64Start + btoa(serializer.serializeToString(svg));
@@ -3716,6 +3735,7 @@ function rasterDOM(dom) {
 					}
 				}
 
+				rasterTarget.innerHTML = '';
 				var width = pix.x[1] - pix.x[0] + 1;
 				var height = pix.y[1] - pix.y[0] + 1;
 				var data = bufferContext.getImageData(pix.x[0], pix.y[0], width, height);
@@ -3739,6 +3759,154 @@ function rasterDOM(dom) {
 	return renderPromise;
 }
 
+var renderSpriteFn = function renderSprite(sprite) {
+	var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+
+	options.context = this;
+	if (sprite.render) {
+		sprite.render.bind(sprite)(options);
+	}
+};
+
+var buffer1 = void 0;
+var renderSpriteToBuffer = void 0;
+var renderSprite = void 0;
+var sprites$1 = void 0;
+var w$3 = void 0;
+var h$3 = void 0;
+var context$2 = void 0;
+
+function init$2(options) {
+	w$3 = options.width;
+	h$3 = options.height;
+	sprites$1 = options.sprites;
+	context$2 = options.context;
+	renderSprite = renderSpriteFn.bind(options.context);
+	buffer1 = new Buffer(options.width, options.height);
+	renderSpriteToBuffer = renderSpriteFn.bind(buffer1.context);
+}
+
+function tweenPromisify(tween) {
+	return new Promise(function (resolve) {
+		tween.onComplete(resolve);
+	});
+}
+
+function animateLogoIn() {
+	return Promise.all([new TWEEN.Tween(sprites$1.highlight).delay(1200).to({ x: sprites$1.logo1.width / 2 + sprites$1.highlight.width * 2 }, 1000).easing(TWEEN.Easing.Quadratic.InOut).onUpdate(function () {
+		return window.stale = true;
+	}).start(), new TWEEN.Tween(sprites$1.logo1).to({ y: (h$3 - sprites$1.logo1.height) / 2 }, 2000).easing(TWEEN.Easing.Elastic.Out).onUpdate(function () {
+		return window.stale = true;
+	}).start()].map(tweenPromisify));
+}
+
+function renderBgAndMessage() {
+	return Promise.all([rasterDOM('<span class="swipe">&lt; SWIPE &gt;</span>'), imageToSprite('images/temp.jpg')]).then(function (detail) {
+
+		var text = detail[0];
+		var bg = detail[1];
+
+		sprites$1.text = text;
+		text.x = (w$3 - text.width) / 2;
+		text.y = (h$3 - text.height) / 2;
+
+		sprites$1.bg = bg;
+		bg.x = (w$3 - bg.width) / 2;
+		bg.y = Math.max((h$3 - bg.height) / 2, 0);
+	});
+}
+
+function renderMenu() {
+	return rasterDOM(document.getElementById('menuContentForRender')).then(function (menu) {
+		return sprites$1.menu = menu;
+	});
+}
+
+function splitPageAtLogo() {
+
+	var splitPos = Math.floor(sprites$1.logo1.y + sprites$1.logo1.height);
+	sprites$1.pageSplitTop = grabArea(0, 0, w$3, splitPos);
+	sprites$1.pageSplitBottom = grabArea(0, splitPos, w$3, h$3 - splitPos);
+
+	return Promise.all([new TWEEN.Tween(sprites$1.pageSplitTop).to({ y: -sprites$1.pageSplitTop.height }, 1000).easing(TWEEN.Easing.Quadratic.Out).onUpdate(function () {
+		return window.stale = true;
+	}).start(), new TWEEN.Tween(sprites$1.pageSplitBottom).to({ y: h$3 }, 1000).easing(TWEEN.Easing.Quadratic.Out).onUpdate(function () {
+		return window.stale = true;
+	}).start()].map(tweenPromisify));
+}
+
+function renderLogo() {
+	return Promise.all([rasterDOM('<div class="logo" data-first="GAMEGIRL" style="font-size: 14px;"></div>'), rasterDOM('<div class="logo" data-second="SELFIES" style="font-size: 14px;"></div>')]).then(function (_ref) {
+		var _ref2 = babelHelpers.slicedToArray(_ref, 2);
+
+		var logo1 = _ref2[0];
+		var logo2 = _ref2[1];
+
+		sprites$1.logo1 = logo1;
+		sprites$1.logo2 = logo2;
+
+		sprites$1.highlight = { x: -30 - logo1.width / 2, y: -10, width: 15, height: 60, render: function render() {
+				var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+
+				var ctx = options.context || context$2;
+				ctx.globalCompositeOperation = 'source-atop';
+				ctx.fillStyle = 'rgba(255,255,255,0.4)';
+				ctx.beginPath();
+				ctx.moveTo(sprites$1.logo1.x + this.x + this.width, sprites$1.logo1.y + this.y + 0);
+				ctx.lineTo(sprites$1.logo1.x + this.x + this.width * 2, sprites$1.logo1.y + this.y + 0);
+				ctx.lineTo(sprites$1.logo1.x + this.x + this.width, sprites$1.logo1.y + this.y + this.height);
+				ctx.lineTo(sprites$1.logo1.x + this.x + 0, sprites$1.logo1.y + this.y + this.height);
+				ctx.fill();
+			}
+		};
+
+		logo1.x = (w$3 - logo1.width) / 2;
+		logo2.x = (w$3 - logo2.width) / 2;
+		logo1.y = 0;
+		logo2.y = logo1.height;
+	});
+}
+
+function startAnimLoop(time) {
+	requestAnimationFrame(startAnimLoop);
+	TWEEN.update(time);
+	if (window.stale) {
+		window.stale = false;
+		switch (window.state) {
+			case 'START':
+				clear('#C9CAC9');
+				clear(undefined, { context: buffer1.context });
+				sprites$1.logo2.y = sprites$1.logo1.y + sprites$1.logo1.height;
+				renderSpriteToBuffer(sprites$1.logo1);
+				renderSpriteToBuffer(sprites$1.logo2);
+				renderSpriteToBuffer(sprites$1.highlight);
+				context$2.drawImage(buffer1, 0, 0);
+				break;
+			case 'SPLASH':
+				clear('lavenderblush');
+				sprites$1.bg.dx = sprites$1.text.dx * 0.6;
+				renderSprite(sprites$1.bg);
+				renderSprite(sprites$1.text);
+				if (sprites$1.pageSplitTop) {
+					renderSprite(sprites$1.pageSplitTop);
+					renderSprite(sprites$1.pageSplitBottom);
+				}
+				break;
+			case 'MENU':
+				clear('lavenderblush');
+				renderSprite(sprites$1.menu);
+				if (sprites$1.bg) {
+					sprites$1.bg.dx = sprites$1.text.dx * 0.6;
+					renderSprite(sprites$1.bg);
+					renderSprite(sprites$1.text);
+				}
+				break;
+		}
+	}
+}
+
+var assetPromise = Promise.all([addScript('/scripts/color-thief.js')(), addScript('https://cdn.polyfill.io/v2/polyfill.min.js')()]);
+
 var pixelScale = 3;
 var canvas = document.getElementById('render-target');
 var domWidth = canvas.clientWidth - canvas.clientWidth % pixelScale;
@@ -3746,6 +3914,9 @@ var domHeight = canvas.clientHeight - canvas.clientHeight % pixelScale;
 
 var w = domWidth / pixelScale;
 var h = domHeight / pixelScale;
+window.stale = false;
+window.state = 'START';
+var sprites = {};
 
 canvas.style.flexGrow = 0;
 canvas.style.flexShrink = 0;
@@ -3758,149 +3929,58 @@ canvas.height = h;
 var context = static_initContext(canvas);
 
 (function init$$() {
-	var initOptions = { width: w, height: h, context: context };
+	var initOptions = { width: w, height: h, context: context, sprites: sprites };
 	init(initOptions);
 	init$1(initOptions);
+	init$2(initOptions);
 })();
 
-function tweenPromise(tween) {
-	return new Promise(function (resolve) {
-		tween.onComplete(resolve);
-	});
-}
-
-Promise.all([rasterDOM('<div class="logo" data-first="GAMEGIRL" style="font-size: 14px;"></div>'), rasterDOM('<div class="logo" data-second="SELFIES" style="font-size: 14px;"></div>')]).then(function (_ref) {
-	var _ref2 = babelHelpers.slicedToArray(_ref, 2);
-
-	var logo1 = _ref2[0];
-	var logo2 = _ref2[1];
-
-	var stale = false;
-	var states = ['START', 'SPLASH', 'CAMERA'];
-	var state = 'START';
-	logo1.x = (w - logo1.width) / 2;
-	logo2.x = (w - logo2.width) / 2;
-	logo1.y = 0;
-	logo2.y = logo1.height;
-	var sprites = {
-		logo1: logo1,
-		logo2: logo2,
-		highlight: { x: -30 - logo1.width / 2, y: -10, width: 15, height: 60, render: function render() {
-				var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
-
-				var ctx = options.context || context;
-				ctx.globalCompositeOperation = 'source-atop';
-				ctx.fillStyle = 'rgba(255,255,255,0.4)';
-				ctx.beginPath();
-				ctx.moveTo(sprites.logo1.x + this.x + this.width, sprites.logo1.y + this.y + 0);
-				ctx.lineTo(sprites.logo1.x + this.x + this.width * 2, sprites.logo1.y + this.y + 0);
-				ctx.lineTo(sprites.logo1.x + this.x + this.width, sprites.logo1.y + this.y + this.height);
-				ctx.lineTo(sprites.logo1.x + this.x + 0, sprites.logo1.y + this.y + this.height);
-				ctx.fill();
-			}
-		}
-	};
-
-	var renderSpriteFn = function renderSprite(sprite) {
-		var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
-
-		options.context = this;
-		if (sprite.render) {
-			sprite.render.bind(sprite)(options);
-		}
-	};
-
-	var renderSprite = renderSpriteFn.bind(context);
-	var hammer = new HAMMER(canvas);
-	var tempVars = {};
-	hammer.on('panstart', function () {
-		switch (state) {
-			case 'SPLASH':
+var hammer = new HAMMER(canvas);
+var tempVars = {};
+hammer.on('pan', function (event) {
+	switch (window.state) {
+		case 'SPLASH':
+			if (event.isFirst) {
 				if (tempVars.splashTween) tempVars.splashTween.stop();
-				break;
-		}
-	});
-	hammer.on('pan', function (event) {
-		switch (state) {
-			case 'SPLASH':
+			} else if (!event.isFinal) {
 				sprites.text.dx = event.deltaX / pixelScale;
-				stale = true;
-				break;
-		}
-	});
-	hammer.on('panend', function () {
-		switch (state) {
-			case 'SPLASH':
-				tempVars.splashTween = new TWEEN.Tween(sprites.text).to({ dx: 0 }, 1000).easing(TWEEN.Easing.Elastic.Out).onUpdate(function () {
-					return stale = true;
-				}).start();
-				break;
-		}
-	});
-
-	var buffer1 = new Buffer();
-	var bufferRender = renderSpriteFn.bind(buffer1.context);
-	(function animate(time) {
-		requestAnimationFrame(animate);
-		TWEEN.update(time);
-		if (stale) {
-			stale = false;
-			switch (state) {
-				case 'START':
-					clear('#C9CAC9');
-					clear(undefined, { context: buffer1.context });
-					bufferRender(sprites.logo1);
-					sprites.logo2.y = sprites.logo1.y + sprites.logo1.height;
-					bufferRender(sprites.logo2);
-					bufferRender(sprites.highlight);
-					context.drawImage(buffer1, 0, 0);
-					break;
-				case 'SPLASH':
-					clear('lavenderblush');
-					renderSprite(sprites.text);
-					if (sprites.pageSplitTop) {
-						renderSprite(sprites.pageSplitTop);
-						renderSprite(sprites.pageSplitBottom);
-					}
-					break;
+				window.stale = true;
+			} else if (event.isFinal) {
+				(function () {
+					var endPos = Math.round(sprites.text.dx / w) * w * 2;
+					if (endPos !== 0) window.state = 'MENU';
+					tempVars.splashTween = new TWEEN.Tween(sprites.text).to({ dx: endPos }, 1200).easing(endPos === 0 ? TWEEN.Easing.Elastic.Out : TWEEN.Easing.Quadratic.Out).onUpdate(function () {
+						return window.stale = true;
+					}).onComplete(function () {
+						if (endPos === 0) return;
+						delete sprites.bg;
+						delete sprites.text;
+					}).start();
+				})();
 			}
-		}
-	})();
+			break;
+	}
+});
 
-	new Promise(function (resolve) {
+renderLogo().then(function () {
+	return new Promise(function (resolve) {
 		return requestAnimationFrame(resolve);
-	}).then(function () {
-		return Promise.all([new TWEEN.Tween(sprites.highlight).delay(1200).to({ x: sprites.logo1.width / 2 + sprites.highlight.width * 2 }, 1000).easing(TWEEN.Easing.Quadratic.InOut).onUpdate(function () {
-			return stale = true;
-		}).start(), new TWEEN.Tween(sprites.logo1).to({ y: (h - sprites.logo1.height) / 2 }, 2000).easing(TWEEN.Easing.Elastic.Out).onUpdate(function () {
-			return stale = true;
-		}).start()].map(tweenPromise).concat(rasterDOM('<span class="swipe">&lt; SWIPE &gt;</span>')).concat(imageToSprite('images/temp.jpg'))).then(function (detail) {
-			return detail[3];
-		});
-	}).then(function (text) {
-		state = states[1];
-
-		var splitPos = Math.floor(sprites.logo1.y + sprites.logo1.height);
-		sprites.pageSplitTop = grabArea(0, 0, w, splitPos);
-		sprites.pageSplitBottom = grabArea(0, splitPos, w, h - splitPos);
-
-		sprites.text = text;
-		text.x = (w - text.width) / 2;
-		text.y = Math.max((h - text.height) / 2, 0);
-
-		return Promise.all([new TWEEN.Tween(sprites.pageSplitTop).to({ y: -sprites.pageSplitTop.height }, 1000).easing(TWEEN.Easing.Quadratic.Out).onUpdate(function () {
-			return stale = true;
-		}).start(), new TWEEN.Tween(sprites.pageSplitBottom).to({ y: h }, 1000).easing(TWEEN.Easing.Quadratic.Out).onUpdate(function () {
-			return stale = true;
-		}).start()].map(tweenPromise));
-	}).then(function () {
-		delete sprites.logo1;
-		delete sprites.logo2;
-		delete sprites.pageSplitTop;
-		delete sprites.pageSplitBottom;
-	}).catch(function (e) {
-		throw e;
 	});
+}).then(function () {
+	return startAnimLoop();
+}).then(function () {
+	return Promise.all([renderBgAndMessage(), animateLogoIn(), assetPromise]);
+}).then(function () {
+	return window.state = 'SPLASH';
+}).then(function () {
+	return Promise.all([splitPageAtLogo(), renderMenu()]);
+}).then(function () {
+	delete sprites.logo1;
+	delete sprites.logo2;
+	delete sprites.pageSplitTop;
+	delete sprites.pageSplitBottom;
+}).catch(function (e) {
+	throw e;
 });
 }());
 //# sourceMappingURL=main.js.map

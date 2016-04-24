@@ -60,7 +60,11 @@ function rasterDOM(dom) {
 		if (typeof dom === 'string') {
 			rasterTarget.innerHTML = dom;
 		} else {
-			rasterTarget.appendChild(dom.clone(true));
+			const newDom = dom.cloneNode(true);
+			if (newDom.style.display === 'none') {
+				newDom.style.display = 'block';
+			}
+			rasterTarget.appendChild(newDom);
 		}
 
 		const image64 = b64Start + btoa(serializer.serializeToString(svg));
@@ -89,6 +93,7 @@ function rasterDOM(dom) {
 				}
 			}
 
+			rasterTarget.innerHTML = '';
 			const width = pix.x[1] - pix.x[0] + 1;
 			const height = pix.y[1] - pix.y[0] + 1;
 			const data = bufferContext.getImageData(pix.x[0], pix.y[0], width, height);
