@@ -56,7 +56,15 @@ hammer.on('pan', function(event) {
 				window.stale = true;
 			} else if (event.isFinal) {
 				const endPos = Math.round(sprites.text.dx/w) * w * 2;
-				if (endPos !== 0) window.state = 'MENU';
+				if (endPos !== 0) {
+					window.state = 'MENU';
+					menuContent.classList.remove('no-interaction');
+					new TWEEN.Tween(sprites.bg)
+					.to({ opacity: 0 })
+					.easing(TWEEN.Easing.Quadratic.Out)
+					.onUpdate(() => window.stale = true)
+					.start();
+				}
 				tempVars.splashTween = new TWEEN.Tween(sprites.text)
 				.to({ dx: endPos }, 1200)
 				.easing(endPos === 0 ? TWEEN.Easing.Elastic.Out : TWEEN.Easing.Quadratic.Out)
@@ -72,9 +80,21 @@ hammer.on('pan', function(event) {
 	}
 });
 
-renderLogo()
+const menuContent = document.querySelector('#menuContentForRender');
+
+menuContent.addEventListener('click', function (e) {
+	console.log(e.target);
+});
+
+new Promise(function (resolve) {
+	window.addEventListener('load', function onload() {
+		window.removeEventListener('load', onload);
+		resolve();
+	});
+})
+.then(renderLogo)
 .then(() => new Promise(resolve => requestAnimationFrame(resolve)))
-.then(() => startAnimLoop())
+.then(startAnimLoop)
 .then(() => Promise.all([
 	renderBgAndMessage(),
 	animateLogoIn(),

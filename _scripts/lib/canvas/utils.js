@@ -35,7 +35,9 @@ function clear(fillStyle, options = {}) {
 function renderData(options = {}) {
 	const ctx = options.context || context;
 	ctx.globalCompositeOperation = options.composite || 'source-over';
+	ctx.globalAlpha = this.opacity === undefined ? 1 : this.opacity;
 	ctx.drawImage(this.buffer, this.x + (this.dx || 0), this.y + (this.dy || 0));
+	ctx.globalAlpha = 1;
 }
 
 function Buffer(width = w, height = h) {

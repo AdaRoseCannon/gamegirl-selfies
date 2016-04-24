@@ -73,6 +73,7 @@ function renderBgAndMessage() {
 		sprites.bg = bg;
 		bg.x = (w - bg.width) / 2;
 		bg.y = Math.max((h - bg.height) / 2, 0);
+		bg.opacity = 1;
 	});
 }
 

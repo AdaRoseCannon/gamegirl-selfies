@@ -17,6 +17,10 @@ function init({width, height}) {
 	offscreenCanvas.height = h;
 	svg.setAttribute('width', w);
 	svg.setAttribute('height', h);
+	[].slice.call(document.querySelectorAll('.dummy-for-render')).forEach(el => {
+		el.style.width = `${w}px`;
+		el.style.height = `${h}px`;
+	});
 	hasInit = true;
 }
 
@@ -61,9 +65,7 @@ function rasterDOM(dom) {
 			rasterTarget.innerHTML = dom;
 		} else {
 			const newDom = dom.cloneNode(true);
-			if (newDom.style.display === 'none') {
-				newDom.style.display = 'block';
-			}
+			newDom.classList.remove('fake-render');
 			rasterTarget.appendChild(newDom);
 		}
 
@@ -88,7 +90,7 @@ function rasterDOM(dom) {
 						if (x < pix.x[0]) pix.x[0] = x;
 						if (y < pix.y[0]) pix.y[0] = y;
 						if (x > pix.x[1]) pix.x[1] = x;
-						if (x > pix.y[1]) pix.y[1] = y;
+						if (y > pix.y[1]) pix.y[1] = y;
 					}
 				}
 			}

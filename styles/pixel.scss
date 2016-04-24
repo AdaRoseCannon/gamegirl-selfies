@@ -1,10 +1,32 @@
 ---
 ---
 
+svg {
+	display: none;
+}
+
+.dummy-for-render.fake-render {
+	position: absolute;
+	top: 6px;
+	left: 6px;
+	transform-origin: 0 0;
+	transform: scale(3);
+	opacity: 0;
+}
+
+.no-interaction {
+	display: none;
+}
+
+.dummy-for-render,
 svg foreignObject div {
 	font-size: 8px;
     font-family: "Pixel", "Press Start P2", "monospace";
     line-height: 16px;
+
+	.dummy-for-render {
+		display: block !important;
+	}
 
 	.swipe {
 		border-style: solid;
@@ -12,6 +34,17 @@ svg foreignObject div {
 		margin-top: 8px;
 		display: inline-block;
 		padding-top: 4px;
+	}
+
+	button {
+		display: inline-block;
+		border: 1px solid blue;
+		background: white;
+		box-shadow: 2px 2px 0 0 grey;
+		margin-bottom: 3px;
+    	font-family: "Pixel", "Press Start P2", "monospace";
+		line-height: 16px;
+		font-size: 8px;
 	}
 }
 

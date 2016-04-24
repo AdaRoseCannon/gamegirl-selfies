@@ -3584,7 +3584,9 @@ function renderData() {
 
 	var ctx = options.context || context$1;
 	ctx.globalCompositeOperation = options.composite || 'source-over';
+	ctx.globalAlpha = this.opacity === undefined ? 1 : this.opacity;
 	ctx.drawImage(this.buffer, this.x + (this.dx || 0), this.y + (this.dy || 0));
+	ctx.globalAlpha = 1;
 }
 
 function Buffer() {
@@ -3650,6 +3652,10 @@ function init(_ref) {
 	offscreenCanvas.height = h$1;
 	svg.setAttribute('width', w$1);
 	svg.setAttribute('height', h$1);
+	[].slice.call(document.querySelectorAll('.dummy-for-render')).forEach(function (el) {
+		el.style.width = w$1 + 'px';
+		el.style.height = h$1 + 'px';
+	});
 	hasInit = true;
 }
 
@@ -3703,9 +3709,7 @@ function rasterDOM(dom) {
 				rasterTarget.innerHTML = dom;
 			} else {
 				var newDom = dom.cloneNode(true);
-				if (newDom.style.display === 'none') {
-					newDom.style.display = 'block';
-				}
+				newDom.classList.remove('fake-render');
 				rasterTarget.appendChild(newDom);
 			}
 
@@ -3730,7 +3734,7 @@ function rasterDOM(dom) {
 							if (x < pix.x[0]) pix.x[0] = x;
 							if (y < pix.y[0]) pix.y[0] = y;
 							if (x > pix.x[1]) pix.x[1] = x;
-							if (x > pix.y[1]) pix.y[1] = y;
+							if (y > pix.y[1]) pix.y[1] = y;
 						}
 					}
 				}
@@ -3813,6 +3817,7 @@ function renderBgAndMessage() {
 		sprites$1.bg = bg;
 		bg.x = (w$3 - bg.width) / 2;
 		bg.y = Math.max((h$3 - bg.height) / 2, 0);
+		bg.opacity = 1;
 	});
 }
 
@@ -3948,7 +3953,13 @@ hammer.on('pan', function (event) {
 			} else if (event.isFinal) {
 				(function () {
 					var endPos = Math.round(sprites.text.dx / w) * w * 2;
-					if (endPos !== 0) window.state = 'MENU';
+					if (endPos !== 0) {
+						window.state = 'MENU';
+						menuContent.classList.remove('no-interaction');
+						new TWEEN.Tween(sprites.bg).to({ opacity: 0 }).easing(TWEEN.Easing.Quadratic.Out).onUpdate(function () {
+							return window.stale = true;
+						}).start();
+					}
 					tempVars.splashTween = new TWEEN.Tween(sprites.text).to({ dx: endPos }, 1200).easing(endPos === 0 ? TWEEN.Easing.Elastic.Out : TWEEN.Easing.Quadratic.Out).onUpdate(function () {
 						return window.stale = true;
 					}).onComplete(function () {
@@ -3962,13 +3973,22 @@ hammer.on('pan', function (event) {
 	}
 });
 
-renderLogo().then(function () {
+var menuContent = document.querySelector('#menuContentForRender');
+
+menuContent.addEventListener('click', function (e) {
+	console.log(e.target);
+});
+
+new Promise(function (resolve) {
+	window.addEventListener('load', function onload() {
+		window.removeEventListener('load', onload);
+		resolve();
+	});
+}).then(renderLogo).then(function () {
 	return new Promise(function (resolve) {
 		return requestAnimationFrame(resolve);
 	});
-}).then(function () {
-	return startAnimLoop();
-}).then(function () {
+}).then(startAnimLoop).then(function () {
 	return Promise.all([renderBgAndMessage(), animateLogoIn(), assetPromise]);
 }).then(function () {
 	return window.state = 'SPLASH';
