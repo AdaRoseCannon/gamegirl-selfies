@@ -5,7 +5,8 @@ import {
 	grabArea,
 	imageToSprite,
 	Buffer,
-	clear
+	clear,
+	loadImage
 } from './canvas/utils';
 
 const renderSpriteFn = function renderSprite(sprite, options = {}) {
@@ -30,6 +31,7 @@ function init(options) {
 	context = options.context;
 	renderSprite = renderSpriteFn.bind(options.context);
 	buffer1 = new Buffer(options.width, options.height);
+	sprites.buffers.buffer1 = buffer1;
 	renderSpriteToBuffer = renderSpriteFn.bind(buffer1.context);
 }
 
@@ -74,6 +76,18 @@ function renderBgAndMessage() {
 		bg.x = (w - bg.width) / 2;
 		bg.y = Math.max((h - bg.height) / 2, 0);
 		bg.opacity = 1;
+	});
+}
+
+function loadStars() {
+	return Promise.all([
+		loadImage('images/star16.png'),
+		loadImage('images/star32.png'),
+		loadImage('images/star64.png')
+	]).then(detail => {
+		sprites.buffers.starSmall = detail[0];
+		sprites.buffers.starMed = detail[1];
+		sprites.buffers.starLarge = detail[2];
 	});
 }
 
@@ -163,6 +177,13 @@ function startAnimLoop(time) {
 					renderSprite(sprites.bg);
 					renderSprite(sprites.text);
 				}
+				buffer1.context.globalCompositeOperation = 'source-over';
+				const star = [
+					sprites.buffers.starSmall,
+					sprites.buffers.starMed
+				][Math.floor(Math.random() * 2)]; -
+				buffer1.context.drawImage(star, Math.floor(Math.random() * w - star.width/2), Math.floor(Math.random() * h - star.height/2));
+				context.drawImage(buffer1, 0, 0);
 				break;
 		}
 	}
@@ -175,5 +196,6 @@ export {
 	animateLogoIn,
 	init,
 	startAnimLoop,
-	renderLogo
+	renderLogo,
+	loadStars
 };

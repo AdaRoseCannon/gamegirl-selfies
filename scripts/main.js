@@ -3612,23 +3612,29 @@ function grabArea(x, y, width, height) {
 	};
 }
 
-function imageToSprite(url) {
+function loadImage(url) {
+	var image = document.createElement('img');
 	return new Promise(function (resolve, reject) {
-		var image = document.createElement('img');
-		image.onload = function render() {
-			resolve({
-				width: this.width,
-				height: this.height,
-				x: 0,
-				y: 0,
-				buffer: image,
-				render: renderData
-			});
-		};
 		image.onerror = function error(e) {
 			reject(e);
 		};
+		image.onload = function render() {
+			resolve(image);
+		};
 		image.src = url;
+	});
+}
+
+function imageToSprite(url) {
+	return loadImage(url).then(function (image) {
+		return {
+			width: image.width,
+			height: image.height,
+			x: 0,
+			y: 0,
+			buffer: image,
+			render: renderData
+		};
 	});
 }
 
@@ -3787,6 +3793,7 @@ function init$2(options) {
 	context$2 = options.context;
 	renderSprite = renderSpriteFn.bind(options.context);
 	buffer1 = new Buffer(options.width, options.height);
+	sprites$1.buffers.buffer1 = buffer1;
 	renderSpriteToBuffer = renderSpriteFn.bind(buffer1.context);
 }
 
@@ -3818,6 +3825,14 @@ function renderBgAndMessage() {
 		bg.x = (w$3 - bg.width) / 2;
 		bg.y = Math.max((h$3 - bg.height) / 2, 0);
 		bg.opacity = 1;
+	});
+}
+
+function loadStars() {
+	return Promise.all([loadImage('images/star16.png'), loadImage('images/star32.png'), loadImage('images/star64.png')]).then(function (detail) {
+		sprites$1.buffers.starSmall = detail[0];
+		sprites$1.buffers.starMed = detail[1];
+		sprites$1.buffers.starLarge = detail[2];
 	});
 }
 
@@ -3905,6 +3920,9 @@ function startAnimLoop(time) {
 					renderSprite(sprites$1.bg);
 					renderSprite(sprites$1.text);
 				}
+				buffer1.context.globalCompositeOperation = 'source-over';
+				var star = [sprites$1.buffers.starSmall, sprites$1.buffers.starMed][Math.floor(Math.random() * 2)];-buffer1.context.drawImage(star, Math.floor(Math.random() * w$3 - star.width / 2), Math.floor(Math.random() * h$3 - star.height / 2));
+				context$2.drawImage(buffer1, 0, 0);
 				break;
 		}
 	}
@@ -3922,6 +3940,7 @@ var h = domHeight / pixelScale;
 window.stale = false;
 window.state = 'START';
 var sprites = {};
+sprites.buffers = {};
 
 canvas.style.flexGrow = 0;
 canvas.style.flexShrink = 0;
@@ -3956,6 +3975,7 @@ hammer.on('pan', function (event) {
 					if (endPos !== 0) {
 						window.state = 'MENU';
 						menuContent.classList.remove('no-interaction');
+						clear(undefined, { context: sprites.buffers.buffer1.context });
 						new TWEEN.Tween(sprites.bg).to({ opacity: 0 }).easing(TWEEN.Easing.Quadratic.Out).onUpdate(function () {
 							return window.stale = true;
 						}).start();
@@ -3989,7 +4009,7 @@ new Promise(function (resolve) {
 		return requestAnimationFrame(resolve);
 	});
 }).then(startAnimLoop).then(function () {
-	return Promise.all([renderBgAndMessage(), animateLogoIn(), assetPromise]);
+	return Promise.all([renderBgAndMessage(), loadStars(), animateLogoIn(), assetPromise]);
 }).then(function () {
 	return window.state = 'SPLASH';
 }).then(function () {

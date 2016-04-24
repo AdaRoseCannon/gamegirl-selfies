@@ -60,24 +60,28 @@ function grabArea(x,y,width,height) {
 	};
 }
 
-function imageToSprite(url) {
+function loadImage(url) {
+	const image = document.createElement('img');
 	return new Promise(function (resolve, reject) {
-		const image = document.createElement('img');
-		image.onload = function render() {
-			resolve({
-				width: this.width,
-				height: this.height,
-				x: 0,
-				y: 0,
-				buffer: image,
-				render: renderData
-			});
-		};
 		image.onerror = function error(e) {
 			reject(e);
 		};
+		image.onload = function render() {
+			resolve(image);
+		};
 		image.src = url;
 	});
+}
+
+function imageToSprite(url) {
+	return loadImage(url).then(image => ({
+		width: image.width,
+		height: image.height,
+		x: 0,
+		y: 0,
+		buffer: image,
+		render: renderData
+	}));
 }
 
 export {
@@ -88,5 +92,6 @@ export {
 	fill,
 	Buffer,
 	renderData,
-	imageToSprite
+	imageToSprite,
+	loadImage
 };

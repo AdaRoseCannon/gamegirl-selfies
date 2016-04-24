@@ -3,11 +3,20 @@
 import HAMMER from 'hammerjs';
 import TWEEN from 'tween.js';
 import addScript from './lib/add-script';
-
 import {init as initSVGRender} from './lib/canvas/svg-render';
-import {renderBgAndMessage, startAnimLoop, renderMenu, animateLogoIn, splitPageAtLogo, renderLogo, init as initAnims} from './lib/loading-animations';
+import {
+	renderBgAndMessage,
+	startAnimLoop,
+	renderMenu,
+	animateLogoIn,
+	splitPageAtLogo,
+	renderLogo,
+	init as initAnims,
+	loadStars
+} from './lib/loading-animations';
 import {
 	static_initContext,
+	clear,
 	init as initUtils
 } from './lib/canvas/utils';
 
@@ -25,6 +34,7 @@ const h = domHeight/pixelScale;
 window.stale = false;
 window.state = 'START';
 const sprites = {};
+sprites.buffers = {};
 
 canvas.style.flexGrow = 0;
 canvas.style.flexShrink = 0;
@@ -58,6 +68,7 @@ hammer.on('pan', function(event) {
 				if (endPos !== 0) {
 					window.state = 'MENU';
 					menuContent.classList.remove('no-interaction');
+					clear(undefined, {context: sprites.buffers.buffer1.context});
 					new TWEEN.Tween(sprites.bg)
 					.to({ opacity: 0 })
 					.easing(TWEEN.Easing.Quadratic.Out)
@@ -96,6 +107,7 @@ new Promise(function (resolve) {
 .then(startAnimLoop)
 .then(() => Promise.all([
 	renderBgAndMessage(),
+	loadStars(),
 	animateLogoIn(),
 	assetPromise
 ]))
