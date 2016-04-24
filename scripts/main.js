@@ -3910,7 +3910,7 @@ function startAnimLoop(time) {
 	}
 }
 
-var assetPromise = Promise.all([addScript('scripts/color-thief.js')(), addScript('https://cdn.polyfill.io/v2/polyfill.min.js')()]);
+var assetPromise = Promise.all([addScript('scripts/color-thief.js')()]);
 
 var pixelScale = 3;
 var canvas = document.getElementById('render-target');

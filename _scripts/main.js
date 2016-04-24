@@ -12,8 +12,7 @@ import {
 } from './lib/canvas/utils';
 
 const assetPromise = Promise.all([
-	addScript('scripts/color-thief.js')(),
-	addScript('https://cdn.polyfill.io/v2/polyfill.min.js')()
+	addScript('scripts/color-thief.js')()
 ]);
 
 const pixelScale = 3;
