@@ -60,6 +60,16 @@ function grabArea(x,y,width,height) {
 	};
 }
 
+function getSpriteWithEmptyBuffer(width, height) {
+	const buffer = new Buffer(width, height);
+	return {
+		buffer,
+		width, height,
+		x: 0, y: 0,
+		render: renderData
+	};
+}
+
 function loadImage(url) {
 	const image = document.createElement('img');
 	return new Promise(function (resolve, reject) {
@@ -93,5 +103,6 @@ export {
 	Buffer,
 	renderData,
 	imageToSprite,
-	loadImage
+	loadImage,
+	getSpriteWithEmptyBuffer
 };

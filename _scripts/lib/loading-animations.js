@@ -6,7 +6,9 @@ import {
 	imageToSprite,
 	Buffer,
 	clear,
-	loadImage
+	loadImage,
+	getSpriteWithEmptyBuffer,
+	fill
 } from './canvas/utils';
 
 const renderSpriteFn = function renderSprite(sprite, options = {}) {
@@ -80,15 +82,20 @@ function renderBgAndMessage() {
 }
 
 function loadStars() {
-	return Promise.all([
+	if (loadStars.prototype.starsPromise) {
+		return loadStars.prototype.starsPromise;
+	}
+	loadStars.prototype.starsPromise = Promise.all([
 		loadImage('images/star16.png'),
 		loadImage('images/star32.png'),
 		loadImage('images/star64.png')
-	]).then(detail => {
+	])
+	.then(detail => {
 		sprites.buffers.starSmall = detail[0];
 		sprites.buffers.starMed = detail[1];
 		sprites.buffers.starLarge = detail[2];
 	});
+	return loadStars.prototype.starsPromise;
 }
 
 function renderMenu() {
@@ -144,6 +151,41 @@ function renderLogo() {
 	});
 }
 
+function renderStarWipe() {
+	return loadStars()
+	.then(() => {
+		const starWipe = getSpriteWithEmptyBuffer(w*2,h*2);
+		starWipe.buffer.context.globalCompositeOperation = 'source-over';
+		const stars = [
+			sprites.buffers.starSmall,
+			sprites.buffers.starMed
+		];
+		starWipe.x = 0 + w * 0.5;
+		starWipe.y = -h - h * 0.5;
+		let noStars = 50;
+		sprites.starWipe = starWipe;
+		while (noStars--) {
+			const star = stars[Math.floor(Math.random() * 2)];
+			const t = Math.random();
+			const lag = Math.random();
+			starWipe.buffer.context.drawImage(
+				star,
+				t*w*2 + (0.5 * h * lag) - star.width/2,
+				t*h*2 + (0.5 * -w * lag) - star.height/2
+			);
+		}
+	});
+}
+
+function animateStarWipe() {
+	return Promise.all([
+		new TWEEN.Tween(sprites.starWipe)
+			.to({ x: '-' + w*2.5, y: '+' + h*2.5 }, 2000)
+			.onUpdate(() => window.stale = true)
+			.start()
+		].map(tweenPromisify));
+}
+
 function startAnimLoop(time) {
 	requestAnimationFrame(startAnimLoop);
 	TWEEN.update(time);
@@ -177,12 +219,12 @@ function startAnimLoop(time) {
 					renderSprite(sprites.bg);
 					renderSprite(sprites.text);
 				}
+				fill('#1130B8', {
+					context: buffer1.context,
+					composite: 'source-atop'
+				});
 				buffer1.context.globalCompositeOperation = 'source-over';
-				const star = [
-					sprites.buffers.starSmall,
-					sprites.buffers.starMed
-				][Math.floor(Math.random() * 2)]; -
-				buffer1.context.drawImage(star, Math.floor(Math.random() * w - star.width/2), Math.floor(Math.random() * h - star.height/2));
+				renderSpriteToBuffer(sprites.starWipe);
 				context.drawImage(buffer1, 0, 0);
 				break;
 		}
@@ -197,5 +239,7 @@ export {
 	init,
 	startAnimLoop,
 	renderLogo,
-	loadStars
+	loadStars,
+	renderStarWipe,
+	animateStarWipe
 };

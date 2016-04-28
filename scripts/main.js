@@ -3612,6 +3612,16 @@ function grabArea(x, y, width, height) {
 	};
 }
 
+function getSpriteWithEmptyBuffer(width, height) {
+	var buffer = new Buffer(width, height);
+	return {
+		buffer: buffer,
+		width: width, height: height,
+		x: 0, y: 0,
+		render: renderData
+	};
+}
+
 function loadImage(url) {
 	var image = document.createElement('img');
 	return new Promise(function (resolve, reject) {
@@ -3829,11 +3839,15 @@ function renderBgAndMessage() {
 }
 
 function loadStars() {
-	return Promise.all([loadImage('images/star16.png'), loadImage('images/star32.png'), loadImage('images/star64.png')]).then(function (detail) {
+	if (loadStars.prototype.starsPromise) {
+		return loadStars.prototype.starsPromise;
+	}
+	loadStars.prototype.starsPromise = Promise.all([loadImage('images/star16.png'), loadImage('images/star32.png'), loadImage('images/star64.png')]).then(function (detail) {
 		sprites$1.buffers.starSmall = detail[0];
 		sprites$1.buffers.starMed = detail[1];
 		sprites$1.buffers.starLarge = detail[2];
 	});
+	return loadStars.prototype.starsPromise;
 }
 
 function renderMenu() {
@@ -3887,6 +3901,30 @@ function renderLogo() {
 	});
 }
 
+function renderStarWipe() {
+	return loadStars().then(function () {
+		var starWipe = getSpriteWithEmptyBuffer(w$3 * 2, h$3 * 2);
+		starWipe.buffer.context.globalCompositeOperation = 'source-over';
+		var stars = [sprites$1.buffers.starSmall, sprites$1.buffers.starMed];
+		starWipe.x = 0 + w$3 * 0.5;
+		starWipe.y = -h$3 - h$3 * 0.5;
+		var noStars = 50;
+		sprites$1.starWipe = starWipe;
+		while (noStars--) {
+			var star = stars[Math.floor(Math.random() * 2)];
+			var t = Math.random();
+			var lag = Math.random();
+			starWipe.buffer.context.drawImage(star, t * w$3 * 2 + 0.5 * h$3 * lag - star.width / 2, t * h$3 * 2 + 0.5 * -w$3 * lag - star.height / 2);
+		}
+	});
+}
+
+function animateStarWipe() {
+	return Promise.all([new TWEEN.Tween(sprites$1.starWipe).to({ x: '-' + w$3 * 2.5, y: '+' + h$3 * 2.5 }, 2000).onUpdate(function () {
+		return window.stale = true;
+	}).start()].map(tweenPromisify));
+}
+
 function startAnimLoop(time) {
 	requestAnimationFrame(startAnimLoop);
 	TWEEN.update(time);
@@ -3920,8 +3958,12 @@ function startAnimLoop(time) {
 					renderSprite(sprites$1.bg);
 					renderSprite(sprites$1.text);
 				}
+				fill('#1130B8', {
+					context: buffer1.context,
+					composite: 'source-atop'
+				});
 				buffer1.context.globalCompositeOperation = 'source-over';
-				var star = [sprites$1.buffers.starSmall, sprites$1.buffers.starMed][Math.floor(Math.random() * 2)];-buffer1.context.drawImage(star, Math.floor(Math.random() * w$3 - star.width / 2), Math.floor(Math.random() * h$3 - star.height / 2));
+				renderSpriteToBuffer(sprites$1.starWipe);
 				context$2.drawImage(buffer1, 0, 0);
 				break;
 		}
@@ -4009,7 +4051,7 @@ new Promise(function (resolve) {
 		return requestAnimationFrame(resolve);
 	});
 }).then(startAnimLoop).then(function () {
-	return Promise.all([renderBgAndMessage(), loadStars(), animateLogoIn(), assetPromise]);
+	return Promise.all([renderBgAndMessage(), renderStarWipe(), animateLogoIn(), assetPromise]);
 }).then(function () {
 	return window.state = 'SPLASH';
 }).then(function () {
@@ -4019,6 +4061,7 @@ new Promise(function (resolve) {
 	delete sprites.logo2;
 	delete sprites.pageSplitTop;
 	delete sprites.pageSplitBottom;
+	animateStarWipe();
 }).catch(function (e) {
 	throw e;
 });

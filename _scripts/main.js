@@ -12,7 +12,8 @@ import {
 	splitPageAtLogo,
 	renderLogo,
 	init as initAnims,
-	loadStars
+	renderStarWipe,
+	animateStarWipe
 } from './lib/loading-animations';
 import {
 	static_initContext,
@@ -107,7 +108,7 @@ new Promise(function (resolve) {
 .then(startAnimLoop)
 .then(() => Promise.all([
 	renderBgAndMessage(),
-	loadStars(),
+	renderStarWipe(),
 	animateLogoIn(),
 	assetPromise
 ]))
@@ -121,6 +122,7 @@ new Promise(function (resolve) {
 	delete sprites.logo2;
 	delete sprites.pageSplitTop;
 	delete sprites.pageSplitBottom;
+	animateStarWipe()
 })
 .catch(e => {
 	throw e;
