@@ -3564,12 +3564,29 @@ function fill(fillStyle) {
 	var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 
 	var ctx = options.context || context$1;
-	ctx.globalCompositeOperation = options.composite || 'source-over';
-	ctx.rect(0, 0, w$2, h$2);
+
+	// backup old state
+	var oldComposite = ctx.globalCompositeOperation;
+	var oldAlpha = ctx.globalAlpha;
 	var oldFillStyle = ctx.fillStyle;
+
+	// set fill style
+	ctx.globalCompositeOperation = options.composite || 'source-over';
+	if (options.opacity !== undefined) {
+		ctx.globalAlpha = options.opacity;
+	} else {
+		ctx.globalAlpha = 1;
+	}
 	ctx.fillStyle = fillStyle;
+
+	// Draw
+	ctx.rect(0, 0, w$2, h$2);
 	ctx.fill();
+
+	// reset
 	ctx.fillStyle = oldFillStyle;
+	ctx.globalAlpha = oldAlpha;
+	ctx.globalCompositeOperation = oldComposite;
 }
 
 function clear(fillStyle) {
@@ -3583,10 +3600,25 @@ function renderData() {
 	var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
 
 	var ctx = options.context || context$1;
+
+	// backup old state
+	var oldComposite = ctx.globalCompositeOperation;
+	var oldAlpha = ctx.globalAlpha;
+
+	// set fill style
 	ctx.globalCompositeOperation = options.composite || 'source-over';
-	ctx.globalAlpha = this.opacity === undefined ? 1 : this.opacity;
+	if (this.opacity !== undefined) {
+		ctx.globalAlpha = this.opacity;
+	} else if (options.opacity !== undefined) {
+		ctx.globalAlpha = options.opacity;
+	} else {
+		ctx.globalAlpha = 1;
+	}
+
 	ctx.drawImage(this.buffer, this.x + (this.dx || 0), this.y + (this.dy || 0));
-	ctx.globalAlpha = 1;
+
+	ctx.globalAlpha = oldAlpha;
+	ctx.globalCompositeOperation = oldComposite;
 }
 
 function Buffer() {
@@ -3782,14 +3814,13 @@ function rasterDOM(dom) {
 var renderSpriteFn = function renderSprite(sprite) {
 	var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 
-	options.context = this;
+	options.context = options.context || this;
 	if (sprite.render) {
 		sprite.render.bind(sprite)(options);
 	}
 };
 
 var buffer1 = void 0;
-var renderSpriteToBuffer = void 0;
 var renderSprite = void 0;
 var sprites$1 = void 0;
 var w$3 = void 0;
@@ -3804,7 +3835,6 @@ function init$2(options) {
 	renderSprite = renderSpriteFn.bind(options.context);
 	buffer1 = new Buffer(options.width, options.height);
 	sprites$1.buffers.buffer1 = buffer1;
-	renderSpriteToBuffer = renderSpriteFn.bind(buffer1.context);
 }
 
 function tweenPromisify(tween) {
@@ -3850,10 +3880,16 @@ function loadStars() {
 	return loadStars.prototype.starsPromise;
 }
 
-function renderMenu() {
-	return rasterDOM(document.getElementById('menuContentForRender')).then(function (menu) {
-		return sprites$1.menu = menu;
+function renderMenuContent(dom, name) {
+	if (!renderMenuContent.prototype.promises) renderMenuContent.prototype.promises = new Map();
+	if (renderMenuContent.prototype.promises.has(name)) {
+		return renderMenuContent.prototype.promises.get(name);
+	}
+	var p = rasterDOM(dom).then(function (menu) {
+		return sprites$1[name] = menu;
 	});
+	renderMenuContent.prototype.promises.set(name, p);
+	return p;
 }
 
 function splitPageAtLogo() {
@@ -3908,7 +3944,7 @@ function renderStarWipe() {
 		var stars = [sprites$1.buffers.starSmall, sprites$1.buffers.starMed];
 		starWipe.x = 0 + w$3 * 0.5;
 		starWipe.y = -h$3 - h$3 * 0.5;
-		var noStars = 50;
+		var noStars = Math.floor(Math.sqrt(w$3 * w$3 + h$3 * h$3) * 0.2);
 		sprites$1.starWipe = starWipe;
 		while (noStars--) {
 			var star = stars[Math.floor(Math.random() * 2)];
@@ -3935,9 +3971,15 @@ function startAnimLoop(time) {
 				clear('#C9CAC9');
 				clear(undefined, { context: buffer1.context });
 				sprites$1.logo2.y = sprites$1.logo1.y + sprites$1.logo1.height;
-				renderSpriteToBuffer(sprites$1.logo1);
-				renderSpriteToBuffer(sprites$1.logo2);
-				renderSpriteToBuffer(sprites$1.highlight);
+				renderSprite(sprites$1.logo1, {
+					context: buffer1.context
+				});
+				renderSprite(sprites$1.logo2, {
+					context: buffer1.context
+				});
+				renderSprite(sprites$1.highlight, {
+					context: buffer1.context
+				});
 				context$2.drawImage(buffer1, 0, 0);
 				break;
 			case 'SPLASH':
@@ -3950,21 +3992,41 @@ function startAnimLoop(time) {
 					renderSprite(sprites$1.pageSplitBottom);
 				}
 				break;
-			case 'MENU':
+
+			default:
 				clear('lavenderblush');
-				renderSprite(sprites$1.menu);
+
+				renderSprite(sprites$1.currentDom);
+
+				if (sprites$1.nextDom) {
+
+					// There is an animation happening
+					fill('lavenderblush', {
+						context: buffer1.context,
+						opactiy: 0.2,
+						composite: 'source-atop'
+					});
+
+					renderSprite(sprites$1.nextDom, {
+						context: buffer1.context,
+						opacity: 1,
+						composite: 'source-atop'
+					});
+
+					renderSprite(sprites$1.starWipe, {
+						context: buffer1.context
+					});
+
+					context$2.drawImage(buffer1, 0, 0);
+				}
+
+				// Render the splash screen on on top of everything if it is loaded
 				if (sprites$1.bg) {
 					sprites$1.bg.dx = sprites$1.text.dx * 0.6;
 					renderSprite(sprites$1.bg);
 					renderSprite(sprites$1.text);
 				}
-				fill('#1130B8', {
-					context: buffer1.context,
-					composite: 'source-atop'
-				});
-				buffer1.context.globalCompositeOperation = 'source-over';
-				renderSpriteToBuffer(sprites$1.starWipe);
-				context$2.drawImage(buffer1, 0, 0);
+
 				break;
 		}
 	}
@@ -3976,6 +4038,8 @@ var pixelScale = 3;
 var canvas = document.getElementById('render-target');
 var domWidth = canvas.clientWidth - canvas.clientWidth % pixelScale;
 var domHeight = canvas.clientHeight - canvas.clientHeight % pixelScale;
+var menuContent = document.querySelector('#menuContentForRender');
+var cameraDom = document.querySelector('#cameraContentForRender');
 
 var w = domWidth / pixelScale;
 var h = domHeight / pixelScale;
@@ -4015,8 +4079,7 @@ hammer.on('pan', function (event) {
 				(function () {
 					var endPos = Math.round(sprites.text.dx / w) * w * 2;
 					if (endPos !== 0) {
-						window.state = 'MENU';
-						menuContent.classList.remove('no-interaction');
+						showDomContent('MENU');
 						clear(undefined, { context: sprites.buffers.buffer1.context });
 						new TWEEN.Tween(sprites.bg).to({ opacity: 0 }).easing(TWEEN.Easing.Quadratic.Out).onUpdate(function () {
 							return window.stale = true;
@@ -4035,10 +4098,34 @@ hammer.on('pan', function (event) {
 	}
 });
 
-var menuContent = document.querySelector('#menuContentForRender');
+function showDomContent(name, wipe) {
+	var wipes = {
+		star: animateStarWipe
+	};
+	var doms = {
+		MENU: menuContent,
+		CAMERA: cameraDom
+	};
+
+	var myWipe = wipes[wipe] || function () {};
+
+	return renderMenuContent(doms[name], name).then(function (sprite) {
+		sprites.nextDom = sprite;
+		Object.keys(doms).forEach(function (k) {
+			return doms[k].classList.add('no-interaction');
+		});
+	}).then(myWipe).then(function () {
+		doms[name].classList.remove('no-interaction');
+		window.state = name;
+		sprites.currentDom = sprites.nextDom;
+		sprites.nextDom = null;
+		window.stale = true;
+	});
+}
 
 menuContent.addEventListener('click', function (e) {
-	console.log(e.target);
+	if (!e.target.dataset.setState) return;
+	showDomContent(e.target.dataset.setState, 'star');
 });
 
 new Promise(function (resolve) {
@@ -4055,13 +4142,12 @@ new Promise(function (resolve) {
 }).then(function () {
 	return window.state = 'SPLASH';
 }).then(function () {
-	return Promise.all([splitPageAtLogo(), renderMenu()]);
+	return Promise.all([splitPageAtLogo()]);
 }).then(function () {
 	delete sprites.logo1;
 	delete sprites.logo2;
 	delete sprites.pageSplitTop;
 	delete sprites.pageSplitBottom;
-	animateStarWipe();
 }).catch(function (e) {
 	throw e;
 });

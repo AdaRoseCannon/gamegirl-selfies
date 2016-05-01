@@ -7,7 +7,7 @@ import {init as initSVGRender} from './lib/canvas/svg-render';
 import {
 	renderBgAndMessage,
 	startAnimLoop,
-	renderMenu,
+	renderMenuContent,
 	animateLogoIn,
 	splitPageAtLogo,
 	renderLogo,
@@ -29,6 +29,8 @@ const pixelScale = 3;
 const canvas = document.getElementById('render-target');
 const domWidth = canvas.clientWidth - (canvas.clientWidth % pixelScale);
 const domHeight = canvas.clientHeight - (canvas.clientHeight % pixelScale);
+const menuContent = document.querySelector('#menuContentForRender');
+const cameraDom = document.querySelector('#cameraContentForRender');
 
 const w = domWidth/pixelScale;
 const h = domHeight/pixelScale;
@@ -67,8 +69,7 @@ hammer.on('pan', function(event) {
 			} else if (event.isFinal) {
 				const endPos = Math.round(sprites.text.dx/w) * w * 2;
 				if (endPos !== 0) {
-					window.state = 'MENU';
-					menuContent.classList.remove('no-interaction');
+					showDomContent('MENU');
 					clear(undefined, {context: sprites.buffers.buffer1.context});
 					new TWEEN.Tween(sprites.bg)
 					.to({ opacity: 0 })
@@ -91,10 +92,35 @@ hammer.on('pan', function(event) {
 	}
 });
 
-const menuContent = document.querySelector('#menuContentForRender');
+function showDomContent(name, wipe) {
+	const wipes = {
+		star: animateStarWipe
+	};
+	const doms = {
+		MENU: menuContent,
+		CAMERA: cameraDom
+	};
+
+	const myWipe = wipes[wipe] || function(){};
+
+	return renderMenuContent(doms[name], name)
+	.then(sprite => {
+		sprites.nextDom = sprite;
+		Object.keys(doms).forEach(k => doms[k].classList.add('no-interaction'));
+	})
+	.then(myWipe)
+	.then(() => {
+		doms[name].classList.remove('no-interaction');
+		window.state = name;
+		sprites.currentDom = sprites.nextDom;
+		sprites.nextDom = null;
+		window.stale = true;
+	});
+}
 
 menuContent.addEventListener('click', function (e) {
-	console.log(e.target);
+	if (!e.target.dataset.setState) return;
+	showDomContent(e.target.dataset.setState, 'star');
 });
 
 new Promise(function (resolve) {
@@ -114,15 +140,13 @@ new Promise(function (resolve) {
 ]))
 .then(() => window.state = 'SPLASH')
 .then(() => Promise.all([
-	splitPageAtLogo(),
-	renderMenu()
+	splitPageAtLogo()
 ]))
 .then(function () {
 	delete sprites.logo1;
 	delete sprites.logo2;
 	delete sprites.pageSplitTop;
 	delete sprites.pageSplitBottom;
-	animateStarWipe()
 })
 .catch(e => {
 	throw e;

@@ -12,14 +12,13 @@ import {
 } from './canvas/utils';
 
 const renderSpriteFn = function renderSprite(sprite, options = {}) {
-	options.context = this;
+	options.context = options.context || this;
 	if (sprite.render) {
 		sprite.render.bind(sprite)(options);
 	}
 };
 
 let buffer1;
-let renderSpriteToBuffer;
 let renderSprite;
 let sprites;
 let w;
@@ -34,7 +33,6 @@ function init(options) {
 	renderSprite = renderSpriteFn.bind(options.context);
 	buffer1 = new Buffer(options.width, options.height);
 	sprites.buffers.buffer1 = buffer1;
-	renderSpriteToBuffer = renderSpriteFn.bind(buffer1.context);
 }
 
 function tweenPromisify(tween) {
@@ -98,9 +96,15 @@ function loadStars() {
 	return loadStars.prototype.starsPromise;
 }
 
-function renderMenu() {
-	return rasterDOM(document.getElementById('menuContentForRender'))
-	.then(menu => sprites.menu = menu);
+function renderMenuContent(dom, name) {
+	if (!renderMenuContent.prototype.promises) renderMenuContent.prototype.promises = new Map();
+	if (renderMenuContent.prototype.promises.has(name)) {
+		return renderMenuContent.prototype.promises.get(name);
+	}
+	const p = rasterDOM(dom)
+	.then(menu => sprites[name] = menu);
+	renderMenuContent.prototype.promises.set(name, p);
+	return p;
 }
 
 function splitPageAtLogo() {
@@ -162,7 +166,7 @@ function renderStarWipe() {
 		];
 		starWipe.x = 0 + w * 0.5;
 		starWipe.y = -h - h * 0.5;
-		let noStars = 50;
+		let noStars = Math.floor(Math.sqrt(w*w + h*h) * 0.2);
 		sprites.starWipe = starWipe;
 		while (noStars--) {
 			const star = stars[Math.floor(Math.random() * 2)];
@@ -196,9 +200,15 @@ function startAnimLoop(time) {
 				clear('#C9CAC9');
 				clear(undefined, {context: buffer1.context});
 				sprites.logo2.y = sprites.logo1.y + sprites.logo1.height;
-				renderSpriteToBuffer(sprites.logo1);
-				renderSpriteToBuffer(sprites.logo2);
-				renderSpriteToBuffer(sprites.highlight);
+				renderSprite(sprites.logo1, {
+					context: buffer1.context
+				});
+				renderSprite(sprites.logo2, {
+					context: buffer1.context
+				});
+				renderSprite(sprites.highlight, {
+					context: buffer1.context
+				});
 				context.drawImage(buffer1, 0, 0);
 				break;
 			case 'SPLASH':
@@ -211,21 +221,41 @@ function startAnimLoop(time) {
 					renderSprite(sprites.pageSplitBottom);
 				}
 				break;
-			case 'MENU':
+
+			default:
 				clear('lavenderblush');
-				renderSprite(sprites.menu);
+
+				renderSprite(sprites.currentDom);
+
+				if (sprites.nextDom) {
+
+					// There is an animation happening
+					fill('lavenderblush', {
+						context: buffer1.context,
+						opactiy: 0.2,
+						composite: 'source-atop'
+					});
+
+					renderSprite(sprites.nextDom, {
+						context: buffer1.context,
+						opacity: 1,
+						composite: 'source-atop'
+					});
+
+					renderSprite(sprites.starWipe, {
+						context: buffer1.context
+					});
+
+					context.drawImage(buffer1, 0, 0);
+				}
+
+				// Render the splash screen on on top of everything if it is loaded
 				if (sprites.bg) {
 					sprites.bg.dx = sprites.text.dx * 0.6;
 					renderSprite(sprites.bg);
 					renderSprite(sprites.text);
 				}
-				fill('#1130B8', {
-					context: buffer1.context,
-					composite: 'source-atop'
-				});
-				buffer1.context.globalCompositeOperation = 'source-over';
-				renderSpriteToBuffer(sprites.starWipe);
-				context.drawImage(buffer1, 0, 0);
+
 				break;
 		}
 	}
@@ -234,7 +264,7 @@ function startAnimLoop(time) {
 export {
 	splitPageAtLogo,
 	renderBgAndMessage,
-	renderMenu,
+	renderMenuContent,
 	animateLogoIn,
 	init,
 	startAnimLoop,

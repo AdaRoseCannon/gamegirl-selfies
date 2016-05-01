@@ -48,5 +48,11 @@ svg foreignObject div {
 	}
 }
 
+.viewfinder {
+	width: 64px;
+	height: 64px;
+	background: black;
+}
+
 @import 'fonts';
 @import 'logo';

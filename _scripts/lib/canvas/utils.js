@@ -19,12 +19,29 @@ function static_initContext(canvas) {
 
 function fill(fillStyle, options = {}) {
 	const ctx = (options.context || context);
-	ctx.globalCompositeOperation = options.composite || 'source-over';
-	ctx.rect(0, 0, w, h);
+
+	// backup old state
+	const oldComposite = ctx.globalCompositeOperation;
+	const oldAlpha = ctx.globalAlpha;
 	const oldFillStyle = ctx.fillStyle;
+
+	// set fill style
+	ctx.globalCompositeOperation = options.composite || 'source-over';
+	if (options.opacity !== undefined) {
+		ctx.globalAlpha = options.opacity;
+	} else {
+		ctx.globalAlpha = 1;
+	}
 	ctx.fillStyle = fillStyle;
+
+	// Draw
+	ctx.rect(0, 0, w, h);
 	ctx.fill();
+
+	// reset
 	ctx.fillStyle = oldFillStyle;
+	ctx.globalAlpha = oldAlpha;
+	ctx.globalCompositeOperation = oldComposite;
 }
 
 function clear(fillStyle, options = {}) {
@@ -34,10 +51,25 @@ function clear(fillStyle, options = {}) {
 
 function renderData(options = {}) {
 	const ctx = options.context || context;
+
+	// backup old state
+	const oldComposite = ctx.globalCompositeOperation;
+	const oldAlpha = ctx.globalAlpha;
+
+	// set fill style
 	ctx.globalCompositeOperation = options.composite || 'source-over';
-	ctx.globalAlpha = this.opacity === undefined ? 1 : this.opacity;
+	if (this.opacity !== undefined) {
+		ctx.globalAlpha = this.opacity;
+	} else if (options.opacity !== undefined) {
+		ctx.globalAlpha = options.opacity;
+	} else {
+		ctx.globalAlpha = 1;
+	}
+
 	ctx.drawImage(this.buffer, this.x + (this.dx || 0), this.y + (this.dy || 0));
-	ctx.globalAlpha = 1;
+
+	ctx.globalAlpha = oldAlpha;
+	ctx.globalCompositeOperation = oldComposite;
 }
 
 function Buffer(width = w, height = h) {
