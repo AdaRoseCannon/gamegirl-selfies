@@ -1,7 +1,7 @@
 
 import TWEEN from 'tween.js';
 import {rasterDOM} from './canvas/svg-render';
-import {isCameraOn, render} from './tinycam';
+import {isCameraOn, render as renderCamera} from './tinycam';
 import {
 	grabArea,
 	imageToSprite,
@@ -192,16 +192,16 @@ function animateStarWipe() {
 }
 
 let i=0;
-function startAnimLoop() {
+function startAnimLoop(time) {
+	requestAnimationFrame(startAnimLoop);
 
 	// half frame rate
 	if (i++ % 2) return;
-	requestAnimationFrame(startAnimLoop);
+	TWEEN.update(time);
 	doRender();
 }
 
-function doRender(time) {
-	TWEEN.update(time);
+function doRender() {
 	if (window.stale) {
 		window.stale = false;
 		switch (window.state) {
@@ -266,7 +266,7 @@ function doRender(time) {
 				}
 
 				if (isCameraOn() && window.state === 'CAMERA') {
-					context.drawImage(render(), 0, 0);
+					context.drawImage(renderCamera(), 0, 0);
 				}
 
 				break;

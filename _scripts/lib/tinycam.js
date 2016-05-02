@@ -1,4 +1,4 @@
-/* global ColorThief*/
+/* global ColorThief, MediaDevices*/
 import color from 'tinycolor2';
 
 function vectorToColor([r,g,b]) {
@@ -12,7 +12,7 @@ function colorToVector(color) {
 	return [o.r, o.g, o.b];
 }
 
-navigator.getUserMedia = navigator.getUserMedia || navigator.mozGetUserMedia || navigator.webkitGetUserMedia;
+navigator.getUserMedia = (MediaDevices && MediaDevices.getUserMedia) || navigator.getUserMedia || navigator.mozGetUserMedia || navigator.webkitGetUserMedia;
 
 let started = false;
 
@@ -77,9 +77,9 @@ function render(updatePalette) {
 	const smallestSide = Math.min(h, w);
 	const width = 64 * w/smallestSide;
 	const height = 64 * h/smallestSide;
-	const data = context.getImageData(0,0,64,64);
 	if (isNaN(width) || isNaN(height)) return;
 	context.drawImage(video, (64 - width)/2, (64 - height)/2, width, height);
+	const data = context.getImageData(0,0,64,64);
 
 	if (!palette || updatePalette) {
 		const paletteArr = ColorThief.getPaletteFromCanvas(data, 16);
@@ -118,7 +118,12 @@ function render(updatePalette) {
 
 function start() {
 	return new Promise(function (resolve) {
-		navigator.getUserMedia({ 'video': true }, function (stream) {
+		navigator.getUserMedia({
+			video: {
+				width: {ideal: 64},
+				height: {ideal: 64}
+			},
+		}, function (stream) {
 
 			started = true;
 

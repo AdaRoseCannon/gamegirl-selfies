@@ -4999,7 +4999,7 @@ function colorToVector(color) {
 	return [o.r, o.g, o.b];
 }
 
-navigator.getUserMedia = navigator.getUserMedia || navigator.mozGetUserMedia || navigator.webkitGetUserMedia;
+navigator.getUserMedia = MediaDevices && MediaDevices.getUserMedia || navigator.getUserMedia || navigator.mozGetUserMedia || navigator.webkitGetUserMedia;
 
 var started = false;
 
@@ -5065,9 +5065,9 @@ function render(updatePalette) {
 	var smallestSide = Math.min(h, w);
 	var width = 64 * w / smallestSide;
 	var height = 64 * h / smallestSide;
-	var data = context$3.getImageData(0, 0, 64, 64);
 	if (isNaN(width) || isNaN(height)) return;
 	context$3.drawImage(video, (64 - width) / 2, (64 - height) / 2, width, height);
+	var data = context$3.getImageData(0, 0, 64, 64);
 
 	if (!palette || updatePalette) {
 		var paletteArr = ColorThief.getPaletteFromCanvas(data, 16);
@@ -5122,7 +5122,12 @@ function render(updatePalette) {
 
 function start() {
 	return new Promise(function (resolve) {
-		navigator.getUserMedia({ 'video': true }, function (stream) {
+		navigator.getUserMedia({
+			video: {
+				width: { ideal: 64 },
+				height: { ideal: 64 }
+			}
+		}, function (stream) {
 
 			started = true;
 
@@ -5305,16 +5310,16 @@ function animateStarWipe() {
 }
 
 var i = 0;
-function startAnimLoop() {
+function startAnimLoop(time) {
+	requestAnimationFrame(startAnimLoop);
 
 	// half frame rate
 	if (i++ % 2) return;
-	requestAnimationFrame(startAnimLoop);
+	TWEEN.update(time);
 	doRender();
 }
 
-function doRender(time) {
-	TWEEN.update(time);
+function doRender() {
 	if (window.stale) {
 		window.stale = false;
 		switch (window.state) {
