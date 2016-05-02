@@ -21,6 +21,11 @@ import {
 	init as initUtils
 } from './lib/canvas/utils';
 
+import {
+	start as startCamera,
+	render as renderCamera
+} from './lib/tinycam.js';
+
 const assetPromise = Promise.all([
 	addScript('scripts/color-thief.js')()
 ]);
@@ -120,7 +125,14 @@ function showDomContent(name, wipe) {
 
 menuContent.addEventListener('click', function (e) {
 	if (!e.target.dataset.setState) return;
-	showDomContent(e.target.dataset.setState, 'star');
+
+	if (e.target.dataset.setState === 'CAMERA') {
+		startCamera()
+		.then(renderCamera)
+		.then(() => showDomContent(e.target.dataset.setState, 'star'));
+	} else {
+		showDomContent(e.target.dataset.setState, 'star');
+	}
 });
 
 new Promise(function (resolve) {

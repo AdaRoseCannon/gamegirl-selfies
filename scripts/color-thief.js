@@ -137,7 +137,58 @@ ColorThief.prototype.getPalette = function(sourceImage, colorCount, quality) {
     return palette;
 };
 
+/*
+ * getPaletteFromImageData(imageData[, colorCount, quality])
+ * returns array[ {r: num, g: num, b: num}, {r: num, g: num, b: num}, ...]
+ *
+ * Use the median cut algorithm provided by quantize.js to cluster similar colors.
+ *
+ * colorCount determines the size of the palette; the number of colors returned. If not set, it
+ * defaults to 10.
+ *
+ * BUGGY: Function does not always return the requested amount of colors. It can be +/- 2.
+ *
+ * quality is an optional argument. It needs to be an integer. 1 is the highest quality settings.
+ * 10 is the default. There is a trade-off between quality and speed. The bigger the number, the
+ * faster the palette generation but the greater the likelihood that colors will be missed.
+ *
+ *
+ */
+ColorThief.getPaletteFromCanvas = function(imageData, colorCount, quality) {
 
+    if (typeof colorCount === 'undefined') {
+        colorCount = 10;
+    }
+    if (typeof quality === 'undefined' || quality < 1) {
+        quality = 10;
+    }
+
+    var pixels = imageData.data;
+    var pixelCount = imageData.width * imageData.height;
+
+    // Store the RGB values in an array format suitable for quantize function
+    var pixelArray = [];
+    for (var i = 0, offset, r, g, b, a; i < pixelCount; i = i + quality) {
+        offset = i * 4;
+        r = pixels[offset + 0];
+        g = pixels[offset + 1];
+        b = pixels[offset + 2];
+        a = pixels[offset + 3];
+        // If pixel is mostly opaque and not white
+        if (a >= 125) {
+            if (!(r > 250 && g > 250 && b > 250)) {
+                pixelArray.push([r, g, b]);
+            }
+        }
+    }
+
+    // Send array to quantize function which clusters values
+    // using median cut algorithm
+    var cmap    = MMCQ.quantize(pixelArray, colorCount);
+    var palette = cmap? cmap.palette() : null;
+
+    return palette;
+};
 
 
 /*!
