@@ -5089,7 +5089,7 @@ function render(updatePalette) {
 	var data = context$3.getImageData(0, 0, size, size);
 
 	if (!palette || updatePalette) {
-		var paletteArr = ColorThief.getPaletteFromCanvas(data, 16);
+		var paletteArr = ColorThief.getPaletteFromCanvas(data, 12);
 		if (paletteArr) {
 			(function () {
 				palette = processPalette(paletteArr);
