@@ -30,36 +30,69 @@ const assetPromise = Promise.all([
 	addScript('scripts/color-thief.js')()
 ]);
 
+
 const pixelScale = 3;
+let w;
+let h;
+
 const canvas = document.getElementById('render-target');
-const domWidth = canvas.clientWidth - (canvas.clientWidth % pixelScale);
-const domHeight = canvas.clientHeight - (canvas.clientHeight % pixelScale);
 const menuContent = document.querySelector('#menuContentForRender');
 const cameraDom = document.querySelector('#cameraContentForRender');
+const viewFinderEl = document.querySelector('#cameraContentForRender .viewfinder');
+let context;
 
-const w = domWidth/pixelScale;
-const h = domHeight/pixelScale;
+const sizes = {};
+
 window.stale = false;
 window.state = 'START';
 const sprites = {};
 sprites.buffers = {};
 
-canvas.style.flexGrow = 0;
-canvas.style.flexShrink = 0;
-canvas.style.alignSelf = 'center';
-canvas.style.width = domWidth + 'px';
-canvas.style.height = domHeight + 'px';
-canvas.width = w;
-canvas.height = h;
+function setSizes() {
+	canvas.style.width = '';
+	canvas.style.height = '';
+	canvas.style.flexGrow = 1;
+	canvas.style.flexShrink = 0;
+	canvas.style.alignSelf = 'stretch';
 
-const context = static_initContext(canvas);
+	const domWidth = canvas.clientWidth - (canvas.clientWidth % pixelScale);
+	const domHeight = canvas.clientHeight - (canvas.clientHeight % pixelScale);
+	w = domWidth/pixelScale;
+	h = domHeight/pixelScale;
+	window.stale = true;
 
-(function init() {
-	const initOptions = {width: w, height: h, context, sprites};
-	initSVGRender(initOptions);
-	initUtils(initOptions);
-	initAnims(initOptions);
-}());
+	canvas.style.flexGrow = 0;
+	canvas.style.flexShrink = 0;
+	canvas.style.alignSelf = 'center';
+	canvas.style.width = domWidth + 'px';
+	canvas.style.height = domHeight + 'px';
+	canvas.width = w;
+	canvas.height = h;
+
+	context = static_initContext(canvas);
+
+	sizes.screen = {
+		width: w,
+		height: h
+	};
+
+	(function init() {
+		const initOptions = {context, sprites, sizes};
+		initSVGRender(initOptions);
+		initUtils(initOptions);
+		initAnims(initOptions);
+	}());
+
+	sizes.viewfinder = {
+		left: viewFinderEl.offsetLeft,
+		top: viewFinderEl.offsetTop,
+		width: viewFinderEl.offsetWidth,
+		height: viewFinderEl.offsetHeight
+	};
+}
+window.addEventListener('resize', setSizes);
+setSizes();
+setSizes();
 
 const hammer = new HAMMER(canvas);
 const tempVars = {};

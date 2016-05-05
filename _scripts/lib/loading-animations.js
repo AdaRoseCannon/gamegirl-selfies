@@ -22,18 +22,17 @@ const renderSpriteFn = function renderSprite(sprite, options = {}) {
 let buffer1;
 let renderSprite;
 let sprites;
-let w;
-let h;
+let sizes;
 let context;
 
 function init(options) {
-	w = options.width;
-	h = options.height;
+	sizes = options.sizes;
 	sprites = options.sprites;
 	context = options.context;
 	renderSprite = renderSpriteFn.bind(options.context);
 	buffer1 = new Buffer(options.width, options.height);
 	sprites.buffers.buffer1 = buffer1;
+	sizes = options.sizes;
 }
 
 function tweenPromisify(tween) {
@@ -52,7 +51,7 @@ function animateLogoIn() {
 			.start()
 		,
 		new TWEEN.Tween(sprites.logo1)
-			.to({ y: (h - sprites.logo1.height)/2 }, 2000)
+			.to({ y: (sizes.screen.height - sprites.logo1.height)/2 }, 2000)
 			.easing(TWEEN.Easing.Elastic.Out)
 			.onUpdate(() => window.stale = true)
 			.start()
@@ -70,12 +69,12 @@ function renderBgAndMessage() {
 		const bg = detail[1];
 
 		sprites.text = text;
-		text.x = (w - text.width) / 2;
-		text.y = (h - text.height) / 2;
+		text.x = (sizes.screen.width - text.width) / 2;
+		text.y = (sizes.screen.height - text.height) / 2;
 
 		sprites.bg = bg;
-		bg.x = (w - bg.width) / 2;
-		bg.y = Math.max((h - bg.height) / 2, 0);
+		bg.x = (sizes.screen.width - bg.width) / 2;
+		bg.y = Math.max((sizes.screen.height - bg.height) / 2, 0);
 		bg.opacity = 1;
 	});
 }
@@ -111,8 +110,8 @@ function renderMenuContent(dom, name) {
 function splitPageAtLogo() {
 
 	const splitPos = Math.floor(sprites.logo1.y + sprites.logo1.height);
-	sprites.pageSplitTop = grabArea(0, 0, w, splitPos);
-	sprites.pageSplitBottom = grabArea(0, splitPos, w, h - splitPos);
+	sprites.pageSplitTop = grabArea(0, 0, sizes.screen.width, splitPos);
+	sprites.pageSplitBottom = grabArea(0, splitPos, sizes.screen.width, sizes.screen.height - splitPos);
 
 	return Promise.all([
 		new TWEEN.Tween(sprites.pageSplitTop)
@@ -121,7 +120,7 @@ function splitPageAtLogo() {
 		.onUpdate(() => window.stale = true)
 		.start(),
 		new TWEEN.Tween(sprites.pageSplitBottom)
-		.to({ y: h }, 1000)
+		.to({ y: sizes.screen.height }, 1000)
 		.easing(TWEEN.Easing.Quadratic.Out)
 		.onUpdate(() => window.stale = true)
 		.start()
@@ -149,8 +148,8 @@ function renderLogo() {
 			ctx.fill();
 		} };
 
-		logo1.x = (w - logo1.width)/2;
-		logo2.x = (w - logo2.width)/2;
+		logo1.x = (sizes.screen.width - logo1.width)/2;
+		logo2.x = (sizes.screen.width - logo2.width)/2;
 		logo1.y = 0;
 		logo2.y = logo1.height;
 	});
@@ -159,15 +158,15 @@ function renderLogo() {
 function renderStarWipe() {
 	return loadStars()
 	.then(() => {
-		const starWipe = getSpriteWithEmptyBuffer(w*2,h*2);
+		const starWipe = getSpriteWithEmptyBuffer(sizes.screen.width*2,sizes.screen.height*2);
 		starWipe.buffer.context.globalCompositeOperation = 'source-over';
 		const stars = [
 			sprites.buffers.starSmall,
 			sprites.buffers.starMed
 		];
-		starWipe.x = 0 + w * 0.5;
-		starWipe.y = -h - h * 0.5;
-		let noStars = Math.floor(Math.sqrt(w*w + h*h) * 0.2);
+		starWipe.x = 0 + sizes.screen.width * 0.5;
+		starWipe.y = -sizes.screen.height - sizes.screen.height * 0.5;
+		let noStars = Math.floor(Math.sqrt(sizes.screen.width*sizes.screen.width + sizes.screen.height*sizes.screen.height) * 0.2);
 		sprites.starWipe = starWipe;
 		while (noStars--) {
 			const star = stars[Math.floor(Math.random() * 2)];
@@ -175,8 +174,8 @@ function renderStarWipe() {
 			const lag = Math.random();
 			starWipe.buffer.context.drawImage(
 				star,
-				t*w*2 + (0.5 * h * lag) - star.width/2,
-				t*h*2 + (0.5 * -w * lag) - star.height/2
+				t*sizes.screen.width*2 + (0.5 * sizes.screen.height * lag) - star.width/2,
+				t*sizes.screen.height*2 + (0.5 * -sizes.screen.width * lag) - star.height/2
 			);
 		}
 	});
@@ -185,7 +184,7 @@ function renderStarWipe() {
 function animateStarWipe() {
 	return Promise.all([
 		new TWEEN.Tween(sprites.starWipe)
-			.to({ x: '-' + w*2.5, y: '+' + h*2.5 }, 2000)
+			.to({ x: '-' + sizes.screen.width*2.5, y: '+' + sizes.screen.height*2.5 }, 2000)
 			.onUpdate(() => window.stale = true)
 			.start()
 		].map(tweenPromisify));
@@ -266,7 +265,7 @@ function doRender() {
 				}
 
 				if (isCameraOn() && window.state === 'CAMERA') {
-					context.drawImage(renderCamera(), 0, 0);
+					context.drawImage(renderCamera(), sizes.viewfinder.left, sizes.viewfinder.top);
 				}
 
 				break;

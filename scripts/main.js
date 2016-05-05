@@ -3541,13 +3541,11 @@ function addScript(url) {
 	return promiseScript;
 }
 
-var w$2 = void 0;
-var h$2 = void 0;
+var sizes$1 = void 0;
 var context$1 = void 0;
 
 function init$1(o) {
-	w$2 = o.width;
-	h$2 = o.height;
+	sizes$1 = o.sizes;
 	context$1 = o.context;
 }
 
@@ -3580,7 +3578,7 @@ function fill(fillStyle) {
 	ctx.fillStyle = fillStyle;
 
 	// Draw
-	ctx.rect(0, 0, w$2, h$2);
+	ctx.rect(0, 0, sizes$1.screen.width, sizes$1.screen.height);
 	ctx.fill();
 
 	// reset
@@ -3592,7 +3590,7 @@ function fill(fillStyle) {
 function clear(fillStyle) {
 	var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 
-	(options.context || context$1).clearRect(0, 0, w$2, h$2);
+	(options.context || context$1).clearRect(0, 0, sizes$1.screen.width, sizes$1.screen.height);
 	if (fillStyle) fill(fillStyle);
 }
 
@@ -3622,13 +3620,14 @@ function renderData() {
 }
 
 function Buffer() {
-	var width = arguments.length <= 0 || arguments[0] === undefined ? w$2 : arguments[0];
-	var height = arguments.length <= 1 || arguments[1] === undefined ? h$2 : arguments[1];
+	var width = arguments.length <= 0 || arguments[0] === undefined ? sizes$1.screen.width : arguments[0];
+	var height = arguments.length <= 1 || arguments[1] === undefined ? sizes$1.screen.height : arguments[1];
 
 	var tempCanvas = document.createElement('canvas');
 	tempCanvas.width = width;
 	tempCanvas.height = height;
 	tempCanvas.context = tempCanvas.getContext('2d');
+
 	return tempCanvas;
 }
 
@@ -3691,11 +3690,10 @@ var h$1 = void 0;
 var hasInit = false;
 
 function init(_ref) {
-	var width = _ref.width;
-	var height = _ref.height;
+	var sizes = _ref.sizes;
 
-	w$1 = width;
-	h$1 = height;
+	w$1 = sizes.screen.width;
+	h$1 = sizes.screen.height;
 	offscreenCanvas.width = w$1;
 	offscreenCanvas.height = h$1;
 	svg.setAttribute('width', w$1);
@@ -4999,10 +4997,11 @@ function colorToVector(color) {
 	return [o.r, o.g, o.b];
 }
 
+var size = 96;
+
 navigator.getUserMedia = MediaDevices && MediaDevices.getUserMedia || navigator.getUserMedia || navigator.mozGetUserMedia || navigator.webkitGetUserMedia;
 
 var started = false;
-
 var palette = false;
 var prePalette = false;
 var postPalette = false;
@@ -5039,9 +5038,9 @@ var filters = [{
 }];
 
 var video = document.createElement('video');
-video.width = video.height = 64;
+video.width = video.height = size;
 var canvas$1 = document.createElement('canvas');
-canvas$1.width = canvas$1.height = 64;
+canvas$1.width = canvas$1.height = size;
 var context$3 = canvas$1.getContext('2d');
 
 // sort the array into rgb objects
@@ -5063,11 +5062,11 @@ function render(updatePalette) {
 	var h = video.videoHeight;
 	var w = video.videoWidth;
 	var smallestSide = Math.min(h, w);
-	var width = 64 * w / smallestSide;
-	var height = 64 * h / smallestSide;
+	var width = size * w / smallestSide;
+	var height = size * h / smallestSide;
 	if (isNaN(width) || isNaN(height)) return;
-	context$3.drawImage(video, (64 - width) / 2, (64 - height) / 2, width, height);
-	var data = context$3.getImageData(0, 0, 64, 64);
+	context$3.drawImage(video, (size - width) / 2, (size - height) / 2, width, height);
+	var data = context$3.getImageData(0, 0, size, size);
 
 	if (!palette || updatePalette) {
 		var paletteArr = ColorThief.getPaletteFromCanvas(data, 16);
@@ -5124,8 +5123,8 @@ function start() {
 	return new Promise(function (resolve) {
 		navigator.getUserMedia({
 			video: {
-				width: { ideal: 64 },
-				height: { ideal: 64 }
+				width: { ideal: size },
+				height: { ideal: size }
 			}
 		}, function (stream) {
 
@@ -5171,18 +5170,17 @@ var renderSpriteFn = function renderSprite(sprite) {
 var buffer1 = void 0;
 var renderSprite = void 0;
 var sprites$1 = void 0;
-var w$3 = void 0;
-var h$3 = void 0;
+var sizes$2 = void 0;
 var context$2 = void 0;
 
 function init$2(options) {
-	w$3 = options.width;
-	h$3 = options.height;
+	sizes$2 = options.sizes;
 	sprites$1 = options.sprites;
 	context$2 = options.context;
 	renderSprite = renderSpriteFn.bind(options.context);
 	buffer1 = new Buffer(options.width, options.height);
 	sprites$1.buffers.buffer1 = buffer1;
+	sizes$2 = options.sizes;
 }
 
 function tweenPromisify(tween) {
@@ -5194,7 +5192,7 @@ function tweenPromisify(tween) {
 function animateLogoIn() {
 	return Promise.all([new TWEEN.Tween(sprites$1.highlight).delay(1200).to({ x: sprites$1.logo1.width / 2 + sprites$1.highlight.width * 2 }, 1000).easing(TWEEN.Easing.Quadratic.InOut).onUpdate(function () {
 		return window.stale = true;
-	}).start(), new TWEEN.Tween(sprites$1.logo1).to({ y: (h$3 - sprites$1.logo1.height) / 2 }, 2000).easing(TWEEN.Easing.Elastic.Out).onUpdate(function () {
+	}).start(), new TWEEN.Tween(sprites$1.logo1).to({ y: (sizes$2.screen.height - sprites$1.logo1.height) / 2 }, 2000).easing(TWEEN.Easing.Elastic.Out).onUpdate(function () {
 		return window.stale = true;
 	}).start()].map(tweenPromisify));
 }
@@ -5206,12 +5204,12 @@ function renderBgAndMessage() {
 		var bg = detail[1];
 
 		sprites$1.text = text;
-		text.x = (w$3 - text.width) / 2;
-		text.y = (h$3 - text.height) / 2;
+		text.x = (sizes$2.screen.width - text.width) / 2;
+		text.y = (sizes$2.screen.height - text.height) / 2;
 
 		sprites$1.bg = bg;
-		bg.x = (w$3 - bg.width) / 2;
-		bg.y = Math.max((h$3 - bg.height) / 2, 0);
+		bg.x = (sizes$2.screen.width - bg.width) / 2;
+		bg.y = Math.max((sizes$2.screen.height - bg.height) / 2, 0);
 		bg.opacity = 1;
 	});
 }
@@ -5243,12 +5241,12 @@ function renderMenuContent(dom, name) {
 function splitPageAtLogo() {
 
 	var splitPos = Math.floor(sprites$1.logo1.y + sprites$1.logo1.height);
-	sprites$1.pageSplitTop = grabArea(0, 0, w$3, splitPos);
-	sprites$1.pageSplitBottom = grabArea(0, splitPos, w$3, h$3 - splitPos);
+	sprites$1.pageSplitTop = grabArea(0, 0, sizes$2.screen.width, splitPos);
+	sprites$1.pageSplitBottom = grabArea(0, splitPos, sizes$2.screen.width, sizes$2.screen.height - splitPos);
 
 	return Promise.all([new TWEEN.Tween(sprites$1.pageSplitTop).to({ y: -sprites$1.pageSplitTop.height }, 1000).easing(TWEEN.Easing.Quadratic.Out).onUpdate(function () {
 		return window.stale = true;
-	}).start(), new TWEEN.Tween(sprites$1.pageSplitBottom).to({ y: h$3 }, 1000).easing(TWEEN.Easing.Quadratic.Out).onUpdate(function () {
+	}).start(), new TWEEN.Tween(sprites$1.pageSplitBottom).to({ y: sizes$2.screen.height }, 1000).easing(TWEEN.Easing.Quadratic.Out).onUpdate(function () {
 		return window.stale = true;
 	}).start()].map(tweenPromisify));
 }
@@ -5278,8 +5276,8 @@ function renderLogo() {
 			}
 		};
 
-		logo1.x = (w$3 - logo1.width) / 2;
-		logo2.x = (w$3 - logo2.width) / 2;
+		logo1.x = (sizes$2.screen.width - logo1.width) / 2;
+		logo2.x = (sizes$2.screen.width - logo2.width) / 2;
 		logo1.y = 0;
 		logo2.y = logo1.height;
 	});
@@ -5287,24 +5285,24 @@ function renderLogo() {
 
 function renderStarWipe() {
 	return loadStars().then(function () {
-		var starWipe = getSpriteWithEmptyBuffer(w$3 * 2, h$3 * 2);
+		var starWipe = getSpriteWithEmptyBuffer(sizes$2.screen.width * 2, sizes$2.screen.height * 2);
 		starWipe.buffer.context.globalCompositeOperation = 'source-over';
 		var stars = [sprites$1.buffers.starSmall, sprites$1.buffers.starMed];
-		starWipe.x = 0 + w$3 * 0.5;
-		starWipe.y = -h$3 - h$3 * 0.5;
-		var noStars = Math.floor(Math.sqrt(w$3 * w$3 + h$3 * h$3) * 0.2);
+		starWipe.x = 0 + sizes$2.screen.width * 0.5;
+		starWipe.y = -sizes$2.screen.height - sizes$2.screen.height * 0.5;
+		var noStars = Math.floor(Math.sqrt(sizes$2.screen.width * sizes$2.screen.width + sizes$2.screen.height * sizes$2.screen.height) * 0.2);
 		sprites$1.starWipe = starWipe;
 		while (noStars--) {
 			var star = stars[Math.floor(Math.random() * 2)];
 			var t = Math.random();
 			var lag = Math.random();
-			starWipe.buffer.context.drawImage(star, t * w$3 * 2 + 0.5 * h$3 * lag - star.width / 2, t * h$3 * 2 + 0.5 * -w$3 * lag - star.height / 2);
+			starWipe.buffer.context.drawImage(star, t * sizes$2.screen.width * 2 + 0.5 * sizes$2.screen.height * lag - star.width / 2, t * sizes$2.screen.height * 2 + 0.5 * -sizes$2.screen.width * lag - star.height / 2);
 		}
 	});
 }
 
 function animateStarWipe() {
-	return Promise.all([new TWEEN.Tween(sprites$1.starWipe).to({ x: '-' + w$3 * 2.5, y: '+' + h$3 * 2.5 }, 2000).onUpdate(function () {
+	return Promise.all([new TWEEN.Tween(sprites$1.starWipe).to({ x: '-' + sizes$2.screen.width * 2.5, y: '+' + sizes$2.screen.height * 2.5 }, 2000).onUpdate(function () {
 		return window.stale = true;
 	}).start()].map(tweenPromisify));
 }
@@ -5384,7 +5382,7 @@ function doRender() {
 				}
 
 				if (isCameraOn() && window.state === 'CAMERA') {
-					context$2.drawImage(render(), 0, 0);
+					context$2.drawImage(render(), sizes$2.viewfinder.left, sizes$2.viewfinder.top);
 				}
 
 				break;
@@ -5395,35 +5393,67 @@ function doRender() {
 var assetPromise = Promise.all([addScript('scripts/color-thief.js')()]);
 
 var pixelScale = 3;
+var w = void 0;
+var h = void 0;
+
 var canvas = document.getElementById('render-target');
-var domWidth = canvas.clientWidth - canvas.clientWidth % pixelScale;
-var domHeight = canvas.clientHeight - canvas.clientHeight % pixelScale;
 var menuContent = document.querySelector('#menuContentForRender');
 var cameraDom = document.querySelector('#cameraContentForRender');
+var viewFinderEl = document.querySelector('#cameraContentForRender .viewfinder');
+var context = void 0;
 
-var w = domWidth / pixelScale;
-var h = domHeight / pixelScale;
+var sizes = {};
+
 window.stale = false;
 window.state = 'START';
 var sprites = {};
 sprites.buffers = {};
 
-canvas.style.flexGrow = 0;
-canvas.style.flexShrink = 0;
-canvas.style.alignSelf = 'center';
-canvas.style.width = domWidth + 'px';
-canvas.style.height = domHeight + 'px';
-canvas.width = w;
-canvas.height = h;
+function setSizes() {
+	canvas.style.width = '';
+	canvas.style.height = '';
+	canvas.style.flexGrow = 1;
+	canvas.style.flexShrink = 0;
+	canvas.style.alignSelf = 'stretch';
 
-var context = static_initContext(canvas);
+	var domWidth = canvas.clientWidth - canvas.clientWidth % pixelScale;
+	var domHeight = canvas.clientHeight - canvas.clientHeight % pixelScale;
+	w = domWidth / pixelScale;
+	h = domHeight / pixelScale;
+	window.stale = true;
 
-(function init$$() {
-	var initOptions = { width: w, height: h, context: context, sprites: sprites };
-	init(initOptions);
-	init$1(initOptions);
-	init$2(initOptions);
-})();
+	canvas.style.flexGrow = 0;
+	canvas.style.flexShrink = 0;
+	canvas.style.alignSelf = 'center';
+	canvas.style.width = domWidth + 'px';
+	canvas.style.height = domHeight + 'px';
+	canvas.width = w;
+	canvas.height = h;
+
+	context = static_initContext(canvas);
+
+	sizes.screen = {
+		width: w,
+		height: h
+	};
+
+	(function init$$() {
+		var initOptions = { context: context, sprites: sprites, sizes: sizes };
+		init(initOptions);
+		init$1(initOptions);
+		init$2(initOptions);
+	})();
+
+	sizes.viewfinder = {
+		left: viewFinderEl.offsetLeft,
+		top: viewFinderEl.offsetTop,
+		width: viewFinderEl.offsetWidth,
+		height: viewFinderEl.offsetHeight
+	};
+}
+window.addEventListener('resize', setSizes);
+setSizes();
+setSizes();
 
 var hammer = new HAMMER(canvas);
 var tempVars = {};

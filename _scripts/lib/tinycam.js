@@ -12,10 +12,11 @@ function colorToVector(color) {
 	return [o.r, o.g, o.b];
 }
 
+const size = 96;
+
 navigator.getUserMedia = (MediaDevices && MediaDevices.getUserMedia) || navigator.getUserMedia || navigator.mozGetUserMedia || navigator.webkitGetUserMedia;
 
 let started = false;
-
 let palette = false;
 let prePalette = false;
 let postPalette = false;
@@ -52,9 +53,9 @@ const filters = [
 ];
 
 const video = document.createElement('video');
-video.width = video.height = 64;
+video.width = video.height = size;
 const canvas = document.createElement('canvas');
-canvas.width = canvas.height = 64;
+canvas.width = canvas.height = size;
 const context = canvas.getContext('2d');
 
 // sort the array into rgb objects
@@ -75,11 +76,11 @@ function render(updatePalette) {
 	const h = video.videoHeight;
 	const w = video.videoWidth;
 	const smallestSide = Math.min(h, w);
-	const width = 64 * w/smallestSide;
-	const height = 64 * h/smallestSide;
+	const width = size * w/smallestSide;
+	const height = size * h/smallestSide;
 	if (isNaN(width) || isNaN(height)) return;
-	context.drawImage(video, (64 - width)/2, (64 - height)/2, width, height);
-	const data = context.getImageData(0,0,64,64);
+	context.drawImage(video, (size - width)/2, (size - height)/2, width, height);
+	const data = context.getImageData(0,0,size,size);
 
 	if (!palette || updatePalette) {
 		const paletteArr = ColorThief.getPaletteFromCanvas(data, 16);
@@ -120,8 +121,8 @@ function start() {
 	return new Promise(function (resolve) {
 		navigator.getUserMedia({
 			video: {
-				width: {ideal: 64},
-				height: {ideal: 64}
+				width: {ideal: size},
+				height: {ideal: size}
 			},
 		}, function (stream) {
 

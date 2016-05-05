@@ -10,14 +10,15 @@ let w;
 let h;
 let hasInit = false;
 
-function init({width, height}) {
-	w = width;
-	h = height;
+function init({sizes}) {
+	w = sizes.screen.width;
+	h = sizes.screen.height;
 	offscreenCanvas.width = w;
 	offscreenCanvas.height = h;
 	svg.setAttribute('width', w);
 	svg.setAttribute('height', h);
-	[].slice.call(document.querySelectorAll('.dummy-for-render')).forEach(el => {
+	[].slice.call(document.querySelectorAll('.dummy-for-render'))
+	.forEach(el => {
 		el.style.width = `${w}px`;
 		el.style.height = `${h}px`;
 	});

@@ -3,6 +3,9 @@
 
 svg {
 	display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
 }
 
 .dummy-for-render.fake-render {
@@ -15,7 +18,7 @@ svg {
 }
 
 .no-interaction {
-	display: none;
+	pointer-events: none;
 }
 
 .dummy-for-render,
@@ -23,10 +26,6 @@ svg foreignObject div {
 	font-size: 8px;
     font-family: "Pixel", "Press Start P2", "monospace";
     line-height: 16px;
-
-	.dummy-for-render {
-		display: block !important;
-	}
 
 	.swipe {
 		border-style: solid;
@@ -48,10 +47,17 @@ svg foreignObject div {
 	}
 }
 
-.viewfinder {
-	width: 64px;
-	height: 64px;
-	background: black;
+#cameraContentForRender {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+	.viewfinder {
+		width: 96px;
+		height: 96px;
+		background: black;
+		margin-bottom: 0.5em;
+	}
 }
 
 @import 'fonts';

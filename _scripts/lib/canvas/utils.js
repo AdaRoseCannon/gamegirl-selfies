@@ -1,10 +1,8 @@
-let w;
-let h;
+let sizes;
 let context;
 
 function init(o) {
-	w = o.width;
-	h = o.height;
+	sizes = o.sizes;
 	context = o.context;
 }
 
@@ -35,7 +33,7 @@ function fill(fillStyle, options = {}) {
 	ctx.fillStyle = fillStyle;
 
 	// Draw
-	ctx.rect(0, 0, w, h);
+	ctx.rect(0, 0, sizes.screen.width, sizes.screen.height);
 	ctx.fill();
 
 	// reset
@@ -45,7 +43,7 @@ function fill(fillStyle, options = {}) {
 }
 
 function clear(fillStyle, options = {}) {
-	(options.context || context).clearRect(0, 0, w, h);
+	(options.context || context).clearRect(0, 0, sizes.screen.width, sizes.screen.height);
 	if (fillStyle) fill(fillStyle);
 }
 
@@ -72,11 +70,13 @@ function renderData(options = {}) {
 	ctx.globalCompositeOperation = oldComposite;
 }
 
-function Buffer(width = w, height = h) {
+function Buffer(width = sizes.screen.width, height = sizes.screen.height) {
 	const tempCanvas = document.createElement('canvas');
 	tempCanvas.width = width;
 	tempCanvas.height = height;
 	tempCanvas.context = tempCanvas.getContext('2d');
+
+
 	return tempCanvas;
 }
 
