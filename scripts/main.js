@@ -5070,10 +5070,10 @@ function processPalette(p) {
 	});
 }
 
-function distance(threeVA, threeVB) {
-	var dx = threeVA[0] - threeVB[0];
-	var dy = threeVA[1] - threeVB[1];
-	var dz = threeVA[2] - threeVB[2];
+function distance(threeVA, x, y, z) {
+	var dx = threeVA[0] - x;
+	var dy = threeVA[1] - y;
+	var dz = threeVA[2] - z;
 	return dx * dx + dy * dy + dz * dz;
 }
 
@@ -5105,6 +5105,9 @@ function render(updatePalette) {
 				prePalette = palette.map(function (a) {
 					return colorToVector(filter.presort(vectorToColor(a.vector)));
 				});
+				prePalette.forEach(function (a, i) {
+					return a.index = i;
+				});
 				postPalette = prePalette.map(function (a) {
 					return colorToVector(filter.postsort(vectorToColor(a)));
 				});
@@ -5117,16 +5120,14 @@ function render(updatePalette) {
 			var r = data.data[i];
 			var g = data.data[i + 1];
 			var b = data.data[i + 2];
-			var arr = [r, g, b];
 
-			var closestColor = prePalette.concat().sort(function (a, b) {
-				return distance(a, arr) - distance(b, arr);
+			var closestColor = prePalette.sort(function (aV, bV) {
+				return distance(aV, r, g, b) - distance(bV, r, g, b);
 			})[0];
-			var index = prePalette.indexOf(closestColor);
 
-			data.data[i] = postPalette[index][0];
-			data.data[i + 1] = postPalette[index][1];
-			data.data[i + 2] = postPalette[index][2];
+			data.data[i] = postPalette[closestColor.index][0];
+			data.data[i + 1] = postPalette[closestColor.index][1];
+			data.data[i + 2] = postPalette[closestColor.index][2];
 		};
 
 		for (var i = 0, l = data.data.length; i < l; i += 4) {

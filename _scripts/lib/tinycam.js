@@ -64,10 +64,10 @@ function processPalette(p) {
 	.sort((a,b) => a.toHsv().v - b.toHsv().v);
 }
 
-function distance(threeVA, threeVB) {
-	const dx = threeVA[0] - threeVB[0];
-	const dy = threeVA[1] - threeVB[1];
-	const dz = threeVA[2] - threeVB[2];
+function distance(threeVA, x,y,z) {
+	const dx = threeVA[0] - x;
+	const dy = threeVA[1] - y;
+	const dz = threeVA[2] - z;
 	return dx*dx + dy*dy + dz*dz;
 }
 
@@ -92,6 +92,7 @@ function render(updatePalette) {
 			if (!filter.postsort) filter.postsort = i => i;
 
 			prePalette = palette.map(a => colorToVector(filter.presort(vectorToColor(a.vector))));
+			prePalette.forEach((a,i) => a.index = i);
 			postPalette = prePalette.map(a => colorToVector(filter.postsort(vectorToColor(a))));
 		}
 	}
@@ -101,14 +102,12 @@ function render(updatePalette) {
 			const r = data.data[i];
 			const g = data.data[i+1];
 			const b = data.data[i+2];
-			const arr = [r,g,b];
 
-			const closestColor = prePalette.concat().sort((a,b) => distance(a,arr) - distance(b,arr))[0];
-			const index = prePalette.indexOf(closestColor);
+			const closestColor = prePalette.sort((aV,bV) => distance(aV,r,g,b) - distance(bV,r,g,b))[0];
 
-			data.data[i] = postPalette[index][0];
-			data.data[i+1] = postPalette[index][1];
-			data.data[i+2] = postPalette[index][2];
+			data.data[i] = postPalette[closestColor.index][0];
+			data.data[i+1] = postPalette[closestColor.index][1];
+			data.data[i+2] = postPalette[closestColor.index][2];
 		}
 		context.putImageData(data, 0, 0);
 	}
