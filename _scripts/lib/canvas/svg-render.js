@@ -17,11 +17,6 @@ function init({sizes}) {
 	offscreenCanvas.height = h;
 	svg.setAttribute('width', w);
 	svg.setAttribute('height', h);
-	[].slice.call(document.querySelectorAll('.dummy-for-render'))
-	.forEach(el => {
-		el.style.width = `${w}px`;
-		el.style.height = `${h}px`;
-	});
 	hasInit = true;
 }
 
@@ -66,6 +61,7 @@ function rasterDOM(dom) {
 			rasterTarget.innerHTML = dom;
 		} else {
 			const newDom = dom.cloneNode(true);
+			newDom.style.transform = '';
 			newDom.classList.remove('fake-render');
 			rasterTarget.appendChild(newDom);
 		}

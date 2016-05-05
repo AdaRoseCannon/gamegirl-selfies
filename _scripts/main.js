@@ -31,7 +31,7 @@ const assetPromise = Promise.all([
 ]);
 
 
-const pixelScale = 3;
+const pixelScale = 2;
 let w;
 let h;
 
@@ -82,6 +82,15 @@ function setSizes() {
 		initUtils(initOptions);
 		initAnims(initOptions);
 	}());
+
+	[].slice.call(document.querySelectorAll('.dummy-for-render'))
+	.forEach(el => {
+		el.style.width = `${w}px`;
+		el.style.height = `${h}px`;
+		if (el.id !== 'svg-to-raster') {
+			el.style.transform = `scale(${pixelScale})`;
+		}
+	});
 
 	sizes.viewfinder = {
 		left: viewFinderEl.offsetLeft,

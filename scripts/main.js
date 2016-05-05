@@ -3698,10 +3698,6 @@ function init(_ref) {
 	offscreenCanvas.height = h$1;
 	svg.setAttribute('width', w$1);
 	svg.setAttribute('height', h$1);
-	[].slice.call(document.querySelectorAll('.dummy-for-render')).forEach(function (el) {
-		el.style.width = w$1 + 'px';
-		el.style.height = h$1 + 'px';
-	});
 	hasInit = true;
 }
 
@@ -3755,6 +3751,7 @@ function rasterDOM(dom) {
 				rasterTarget.innerHTML = dom;
 			} else {
 				var newDom = dom.cloneNode(true);
+				newDom.style.transform = '';
 				newDom.classList.remove('fake-render');
 				rasterTarget.appendChild(newDom);
 			}
@@ -5392,7 +5389,7 @@ function doRender() {
 
 var assetPromise = Promise.all([addScript('scripts/color-thief.js')()]);
 
-var pixelScale = 3;
+var pixelScale = 2;
 var w = void 0;
 var h = void 0;
 
@@ -5443,6 +5440,14 @@ function setSizes() {
 		init$1(initOptions);
 		init$2(initOptions);
 	})();
+
+	[].slice.call(document.querySelectorAll('.dummy-for-render')).forEach(function (el) {
+		el.style.width = w + 'px';
+		el.style.height = h + 'px';
+		if (el.id !== 'svg-to-raster') {
+			el.style.transform = 'scale(' + pixelScale + ')';
+		}
+	});
 
 	sizes.viewfinder = {
 		left: viewFinderEl.offsetLeft,
