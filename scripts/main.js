@@ -3750,10 +3750,33 @@ function rasterDOM(dom) {
 			if (typeof dom === 'string') {
 				rasterTarget.innerHTML = dom;
 			} else {
-				var newDom = dom.cloneNode(true);
-				newDom.style.transform = '';
-				newDom.classList.remove('fake-render');
-				rasterTarget.appendChild(newDom);
+				(function () {
+					var newDom = dom.cloneNode(true);
+					newDom.style.transform = '';
+					newDom.classList.remove('fake-render');
+					rasterTarget.appendChild(newDom);
+
+					// Crazy hack to enforce that elements align
+					// to the pixel grid.
+					var tracking = new Map();
+					var children = [].slice.call(newDom.querySelectorAll('*'));
+					children.forEach(function (el) {
+						tracking.set(el, {
+							left: el.offsetLeft,
+							top: el.offsetTop,
+							height: el.offsetHeight,
+							width: el.offsetWidth
+						});
+					});
+					children.forEach(function (el) {
+						el.style.position = 'absolute';
+						var details = tracking.get(el);
+						el.style.left = details.left + 'px';
+						el.style.top = details.top + 'px';
+						el.style.width = details.width + 'px';
+						el.style.height = details.height + 'px';
+					});
+				})();
 			}
 
 			var image64 = b64Start + btoa(serializer.serializeToString(svg));
@@ -5187,7 +5210,7 @@ function tweenPromisify(tween) {
 }
 
 function animateLogoIn() {
-	return Promise.all([new TWEEN.Tween(sprites$1.highlight).delay(1200).to({ x: sprites$1.logo1.width / 2 + sprites$1.highlight.width * 2 }, 1000).easing(TWEEN.Easing.Quadratic.InOut).onUpdate(function () {
+	return Promise.all([new TWEEN.Tween(sprites$1.highlight).delay(1200).to({ x: sprites$1.logo1.width / 2 + sprites$1.highlight.width * 3 }, 1000).easing(TWEEN.Easing.Quadratic.InOut).onUpdate(function () {
 		return window.stale = true;
 	}).start(), new TWEEN.Tween(sprites$1.logo1).to({ y: (sizes$2.screen.height - sprites$1.logo1.height) / 2 }, 2000).easing(TWEEN.Easing.Elastic.Out).onUpdate(function () {
 		return window.stale = true;
@@ -5249,7 +5272,7 @@ function splitPageAtLogo() {
 }
 
 function renderLogo() {
-	return Promise.all([rasterDOM('<div class="logo" data-first="GAMEGIRL" style="font-size: 14px;"></div>'), rasterDOM('<div class="logo" data-second="SELFIES" style="font-size: 14px;"></div>')]).then(function (_ref) {
+	return Promise.all([rasterDOM('<div class="logo" data-first="GAMEGIRL" style="font-size: 15vw;"></div>'), rasterDOM('<div class="logo" data-second="SELFIES" style="font-size: 15vw;"></div>')]).then(function (_ref) {
 		var _ref2 = babelHelpers.slicedToArray(_ref, 2);
 
 		var logo1 = _ref2[0];
@@ -5258,7 +5281,7 @@ function renderLogo() {
 		sprites$1.logo1 = logo1;
 		sprites$1.logo2 = logo2;
 
-		sprites$1.highlight = { x: -30 - logo1.width / 2, y: -10, width: 15, height: 60, render: function render() {
+		sprites$1.highlight = { x: -40 - logo1.width / 2, y: -10, width: 20, height: 80, render: function render() {
 				var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
 
 				var ctx = options.context || context$2;

@@ -1,11 +1,20 @@
 ---
 ---
 
+* {
+	font-smooth: never;
+	-webkit-font-smoothing: none;
+}
+
 svg {
-	display: none;
+	pointer-events: none;
     position: absolute;
     top: 0;
     left: 0;
+
+	.screen & {
+		opacity: 0;
+	}
 }
 
 .dummy-for-render.fake-render {

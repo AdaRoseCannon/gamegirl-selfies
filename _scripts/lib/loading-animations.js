@@ -45,7 +45,7 @@ function animateLogoIn() {
 	return Promise.all([
 		new TWEEN.Tween(sprites.highlight)
 			.delay(1200)
-			.to({ x: sprites.logo1.width/2 + sprites.highlight.width*2 }, 1000)
+			.to({ x: sprites.logo1.width/2 + sprites.highlight.width*3 }, 1000)
 			.easing(TWEEN.Easing.Quadratic.InOut)
 			.onUpdate(() => window.stale = true)
 			.start()
@@ -130,13 +130,13 @@ function splitPageAtLogo() {
 
 function renderLogo() {
 	return Promise.all([
-		rasterDOM('<div class="logo" data-first="GAMEGIRL" style="font-size: 14px;"></div>'),
-		rasterDOM('<div class="logo" data-second="SELFIES" style="font-size: 14px;"></div>')
+		rasterDOM('<div class="logo" data-first="GAMEGIRL" style="font-size: 15vw;"></div>'),
+		rasterDOM('<div class="logo" data-second="SELFIES" style="font-size: 15vw;"></div>')
 	]).then(function ([logo1, logo2]) {
 		sprites.logo1 = logo1;
 		sprites.logo2 = logo2;
 
-		sprites.highlight = { x: -30 - logo1.width/2, y: -10, width: 15, height: 60, render(options = {}) {
+		sprites.highlight = { x: -40 - logo1.width/2, y: -10, width: 20, height: 80, render(options = {}) {
 			const ctx = options.context || context;
 			ctx.globalCompositeOperation = 'source-atop';
 			ctx.fillStyle = 'rgba(255,255,255,0.4)';

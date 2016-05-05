@@ -64,6 +64,27 @@ function rasterDOM(dom) {
 			newDom.style.transform = '';
 			newDom.classList.remove('fake-render');
 			rasterTarget.appendChild(newDom);
+
+			// Crazy hack to enforce that elements align
+			// to the pixel grid.
+			const tracking = new Map();
+			const children = [].slice.call(newDom.querySelectorAll('*'));
+			children.forEach(el => {
+				tracking.set(el, {
+					left: el.offsetLeft,
+					top: el.offsetTop,
+					height: el.offsetHeight,
+					width: el.offsetWidth
+				});
+			});
+			children.forEach(el => {
+				el.style.position = 'absolute';
+				const details = tracking.get(el);
+				el.style.left = details.left + 'px';
+				el.style.top = details.top + 'px';
+				el.style.width = details.width + 'px';
+				el.style.height = details.height + 'px';
+			});
 		}
 
 		const image64 = b64Start + btoa(serializer.serializeToString(svg));
