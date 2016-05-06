@@ -3549,6 +3549,16 @@ function init$1(o) {
 	context$1 = o.context;
 }
 
+function getContentBoxPos(el) {
+	var details = window.getComputedStyle(el, null);
+	var top = el.offsetTop + parseInt(details.paddingTop) + parseInt(details.borderTopWidth);
+	var left = el.offsetLeft + parseInt(details.paddingLeft) + parseInt(details.borderLeftWidth);
+	return {
+		top: top,
+		left: left
+	};
+}
+
 function static_initContext(canvas) {
 	var context = canvas.getContext('2d');
 	context.mozImageSmoothingEnabled = false;
@@ -5025,17 +5035,13 @@ var started = false;
 var palette = false;
 var prePalette = false;
 var postPalette = false;
+var paletteInterval = void 0;
 var currentFilter = void 0;
-currentFilter = 0;
+var stopFunc = void 0;
 currentFilter = 0;
 
 var filters = [{
 	name: '#noFilter'
-}, {
-	name: 'Spin',
-	postsort: function postsort(color) {
-		return color.saturate(20).spin(180);
-	}
 }, {
 	name: 'Brighten',
 	postsort: function postsort(color) {
@@ -5047,6 +5053,11 @@ var filters = [{
 		return color.saturate(20).brighten(20);
 	}
 }, {
+	name: 'Spin',
+	postsort: function postsort(color) {
+		return color.saturate(20).spin(180);
+	}
+}, {
 	name: 'Power Pink',
 	postsort: function postsort(colorIn) {
 		var col2 = colorIn.toHsv();
@@ -5056,6 +5067,7 @@ var filters = [{
 		return color(col2);
 	}
 }];
+window.filter = filters[1];
 
 var video = document.createElement('video');
 video.width = video.height = size;
@@ -5084,7 +5096,7 @@ function render(updatePalette) {
 	var smallestSide = Math.min(h, w);
 	var width = size * w / smallestSide;
 	var height = size * h / smallestSide;
-	if (isNaN(width) || isNaN(height)) return;
+	if (isNaN(width) || isNaN(height)) return canvas$1;
 	context$3.drawImage(video, (size - width) / 2, (size - height) / 2, width, height);
 	var data = context$3.getImageData(0, 0, size, size);
 
@@ -5152,7 +5164,7 @@ function start() {
 			started = true;
 
 			// update palette every 2 seconds
-			var interval2 = setInterval(function () {
+			paletteInterval = setInterval(function () {
 				return render(true);
 			}, 2000);
 
@@ -5162,21 +5174,46 @@ function start() {
 				video.src = '';
 				stream.getTracks()[0].stop();
 
-				clearInterval(interval2);
+				clearInterval(paletteInterval);
+				stop = null;
 			}
+
+			stopFunc = stop;
 
 			video.src = window.URL.createObjectURL(stream);
 			video.play();
 
-			return resolve();
+			return resolve(stop);
 		}, function (e) {
 			console.error(e);
 		});
 	});
 }
 
+function stop() {
+	if (stopFunc) stopFunc();
+}
+
+function togglePaletteUpdate() {
+	if (!paletteInterval) {
+		paletteInterval = setInterval(function () {
+			return render(true);
+		}, 2000);
+		return true;
+	} else {
+		clearTimeout(paletteInterval);
+		paletteInterval = null;
+		return false;
+	}
+}
+
 function isCameraOn() {
 	return started;
+}
+
+function changeFilter() {
+	currentFilter = (currentFilter + 1) % filters.length;
+	render(true);
 }
 
 var renderSpriteFn = function renderSprite(sprite) {
@@ -5247,16 +5284,31 @@ function loadStars() {
 	return loadStars.prototype.starsPromise;
 }
 
-function renderMenuContent(dom, name) {
-	if (!renderMenuContent.prototype.promises) renderMenuContent.prototype.promises = new Map();
-	if (renderMenuContent.prototype.promises.has(name)) {
-		return renderMenuContent.prototype.promises.get(name);
+var renderMenuContentPromises = new Map();
+var nameToDom = new Map();
+function renderMenuContent(dom, name, force) {
+	if (force !== true && renderMenuContentPromises.has(name)) {
+		return renderMenuContentPromises.get(name);
 	}
 	var p = rasterDOM(dom).then(function (menu) {
-		return sprites$1[name] = menu;
+		if (sprites$1[name]) {
+			Object.keys(menu).forEach(function (key) {
+				sprites$1[name][key] = menu[key];
+			});
+		} else {
+			sprites$1[name] = menu;
+		}
+		return sprites$1[name];
 	});
-	renderMenuContent.prototype.promises.set(name, p);
+	nameToDom.set(name, dom);
+	renderMenuContentPromises.set(name, p);
 	return p;
+}
+
+function rerenderAllMenuContent() {
+	return Promise.all(Array.from(nameToDom.entries()).map(function (pair) {
+		return renderMenuContent(pair[1], pair[0], true);
+	}));
 }
 
 function splitPageAtLogo() {
@@ -5414,14 +5466,14 @@ function doRender() {
 var assetPromise = Promise.all([addScript('scripts/color-thief.js')()]);
 
 var pixelScale = 2;
-var w = void 0;
-var h = void 0;
+var w = 0;
+var h = 0;
 
 var canvas = document.getElementById('render-target');
 var menuContent = document.querySelector('#menuContentForRender');
-var cameraDom = document.querySelector('#cameraContentForRender');
+var cameraContent = document.querySelector('#cameraContentForRender');
 var viewFinderEl = document.querySelector('#cameraContentForRender .viewfinder');
-var context = void 0;
+var context = null;
 
 var sizes = {};
 
@@ -5473,12 +5525,15 @@ function setSizes() {
 		}
 	});
 
+	var vfDetails = getContentBoxPos(viewFinderEl);
 	sizes.viewfinder = {
-		left: viewFinderEl.offsetLeft,
-		top: viewFinderEl.offsetTop,
+		left: vfDetails.left,
+		top: vfDetails.top,
 		width: viewFinderEl.offsetWidth,
 		height: viewFinderEl.offsetHeight
 	};
+
+	rerenderAllMenuContent();
 }
 window.addEventListener('resize', setSizes);
 setSizes();
@@ -5498,7 +5553,10 @@ hammer.on('pan', function (event) {
 				(function () {
 					var endPos = Math.round(sprites.text.dx / w) * w * 2;
 					if (endPos !== 0) {
-						showDomContent('MENU');
+
+						start();
+						showDomContent('CAMERA');
+
 						clear(undefined, { context: sprites.buffers.buffer1.context });
 						new TWEEN.Tween(sprites.bg).to({ opacity: 0 }).easing(TWEEN.Easing.Quadratic.Out).onUpdate(function () {
 							return window.stale = true;
@@ -5523,7 +5581,7 @@ function showDomContent(name, wipe) {
 	};
 	var doms = {
 		MENU: menuContent,
-		CAMERA: cameraDom
+		CAMERA: cameraContent
 	};
 
 	var myWipe = wipes[wipe] || function () {};
@@ -5547,10 +5605,27 @@ menuContent.addEventListener('click', function (e) {
 
 	if (e.target.dataset.setState === 'CAMERA') {
 		start().then(render).then(function () {
-			return showDomContent(e.target.dataset.setState, 'star');
+			return showDomContent('CAMERA', 'star');
 		});
 	} else {
 		showDomContent(e.target.dataset.setState, 'star');
+	}
+});
+
+cameraContent.addEventListener('click', function (e) {
+	switch (e.target.dataset.action) {
+		case 'CAMERA_CHANGE_FILTER':
+			changeFilter();
+			break;
+		case 'CAMERA_PHOTO':
+			stop();
+			break;
+		case 'CAMERA_PAUSE_PALETTE':
+			togglePaletteUpdate;
+			break;
+		default:
+			console.log(e.target.dataset.action);
+			break;
 	}
 });
 

@@ -20,17 +20,14 @@ let started = false;
 let palette = false;
 let prePalette = false;
 let postPalette = false;
+let paletteInterval;
 let currentFilter;
-currentFilter = 0;
+let stopFunc;
 currentFilter = 0;
 
 const filters = [
 	{
 		name: '#noFilter'
-	},
-	{
-		name: 'Spin',
-		postsort: color => color.saturate(20).spin(180)
 	},
 	{
 		name: 'Brighten',
@@ -39,6 +36,10 @@ const filters = [
 	{
 		name: 'Pop',
 		postsort: color => color.saturate(20).brighten(20)
+	},
+	{
+		name: 'Spin',
+		postsort: color => color.saturate(20).spin(180)
 	},
 	{
 		name: 'Power Pink',
@@ -51,6 +52,7 @@ const filters = [
 		}
 	}
 ];
+window.filter = filters[1];
 
 const video = document.createElement('video');
 video.width = video.height = size;
@@ -78,7 +80,7 @@ function render(updatePalette) {
 	const smallestSide = Math.min(h, w);
 	const width = size * w/smallestSide;
 	const height = size * h/smallestSide;
-	if (isNaN(width) || isNaN(height)) return;
+	if (isNaN(width) || isNaN(height)) return canvas;
 	context.drawImage(video, (size - width)/2, (size - height)/2, width, height);
 	const data = context.getImageData(0,0,size,size);
 
@@ -128,7 +130,7 @@ function start() {
 			started = true;
 
 			// update palette every 2 seconds
-			const interval2 = setInterval(() => render(true), 2000);
+			paletteInterval = setInterval(() => render(true), 2000);
 
 			function stop() {
 
@@ -136,13 +138,16 @@ function start() {
 				video.src = '';
 				stream.getTracks()[0].stop();
 
-				clearInterval(interval2);
+				clearInterval(paletteInterval);
+				stop = null;
 			}
+
+			stopFunc = stop;
 
 			video.src = window.URL.createObjectURL(stream);
 			video.play();
 
-			return resolve();
+			return resolve(stop);
 
 		}, e => {
 			console.error(e);
@@ -150,12 +155,35 @@ function start() {
 	});
 }
 
+function stop() {
+	if (stopFunc) stopFunc();
+}
+
+function togglePaletteUpdate() {
+	if (!paletteInterval) {
+		paletteInterval = setInterval(() => render(true), 2000);
+		return true;
+	} else {
+		clearTimeout(paletteInterval);
+		paletteInterval = null;
+		return false;
+	}
+}
+
 function isCameraOn() {
 	return started;
 }
 
+function changeFilter() {
+	currentFilter = (currentFilter + 1) % filters.length;
+	render(true);
+}
+
 export {
 	start,
+	stop,
 	render,
-	isCameraOn
+	isCameraOn,
+	togglePaletteUpdate,
+	changeFilter
 };

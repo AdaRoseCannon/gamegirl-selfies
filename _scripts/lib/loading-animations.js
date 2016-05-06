@@ -96,15 +96,32 @@ function loadStars() {
 	return loadStars.prototype.starsPromise;
 }
 
-function renderMenuContent(dom, name) {
-	if (!renderMenuContent.prototype.promises) renderMenuContent.prototype.promises = new Map();
-	if (renderMenuContent.prototype.promises.has(name)) {
-		return renderMenuContent.prototype.promises.get(name);
+const renderMenuContentPromises = new Map();
+const nameToDom = new Map();
+function renderMenuContent(dom, name, force) {
+	if (force !== true && renderMenuContentPromises.has(name)) {
+		return renderMenuContentPromises.get(name);
 	}
 	const p = rasterDOM(dom)
-	.then(menu => sprites[name] = menu);
-	renderMenuContent.prototype.promises.set(name, p);
+	.then(menu => {
+		if (sprites[name]) {
+			Object.keys(menu).forEach(key => {
+				sprites[name][key] = menu[key];
+			});
+		} else {
+			sprites[name] = menu;
+		}
+		return sprites[name];
+	});
+	nameToDom.set(name, dom);
+	renderMenuContentPromises.set(name, p);
 	return p;
+}
+
+function rerenderAllMenuContent() {
+	return Promise.all(
+		Array.from(nameToDom.entries()).map(pair => renderMenuContent(pair[1], pair[0], true))
+	);
 }
 
 function splitPageAtLogo() {
@@ -282,6 +299,7 @@ export {
 	startAnimLoop,
 	renderLogo,
 	loadStars,
+	rerenderAllMenuContent,
 	renderStarWipe,
 	animateStarWipe
 };

@@ -13,17 +13,22 @@ import {
 	renderLogo,
 	init as initAnims,
 	renderStarWipe,
-	animateStarWipe
+	animateStarWipe,
+	rerenderAllMenuContent
 } from './lib/loading-animations';
 import {
 	static_initContext,
 	clear,
-	init as initUtils
+	init as initUtils,
+	getContentBoxPos
 } from './lib/canvas/utils';
 
 import {
 	start as startCamera,
-	render as renderCamera
+	render as renderCamera,
+	stop as cameraStop,
+	togglePaletteUpdate,
+	changeFilter,
 } from './lib/tinycam.js';
 
 const assetPromise = Promise.all([
@@ -32,14 +37,14 @@ const assetPromise = Promise.all([
 
 
 const pixelScale = 2;
-let w;
-let h;
+let w=0;
+let h=0;
 
 const canvas = document.getElementById('render-target');
 const menuContent = document.querySelector('#menuContentForRender');
-const cameraDom = document.querySelector('#cameraContentForRender');
+const cameraContent = document.querySelector('#cameraContentForRender');
 const viewFinderEl = document.querySelector('#cameraContentForRender .viewfinder');
-let context;
+let context = null;
 
 const sizes = {};
 
@@ -92,12 +97,15 @@ function setSizes() {
 		}
 	});
 
+	const vfDetails = getContentBoxPos(viewFinderEl);
 	sizes.viewfinder = {
-		left: viewFinderEl.offsetLeft,
-		top: viewFinderEl.offsetTop,
+		left: vfDetails.left,
+		top: vfDetails.top,
 		width: viewFinderEl.offsetWidth,
 		height: viewFinderEl.offsetHeight
 	};
+
+	rerenderAllMenuContent();
 }
 window.addEventListener('resize', setSizes);
 setSizes();
@@ -116,7 +124,10 @@ hammer.on('pan', function(event) {
 			} else if (event.isFinal) {
 				const endPos = Math.round(sprites.text.dx/w) * w * 2;
 				if (endPos !== 0) {
-					showDomContent('MENU');
+
+					startCamera();
+					showDomContent('CAMERA');
+
 					clear(undefined, {context: sprites.buffers.buffer1.context});
 					new TWEEN.Tween(sprites.bg)
 					.to({ opacity: 0 })
@@ -145,7 +156,7 @@ function showDomContent(name, wipe) {
 	};
 	const doms = {
 		MENU: menuContent,
-		CAMERA: cameraDom
+		CAMERA: cameraContent
 	};
 
 	const myWipe = wipes[wipe] || function(){};
@@ -171,9 +182,26 @@ menuContent.addEventListener('click', function (e) {
 	if (e.target.dataset.setState === 'CAMERA') {
 		startCamera()
 		.then(renderCamera)
-		.then(() => showDomContent(e.target.dataset.setState, 'star'));
+		.then(() => showDomContent('CAMERA', 'star'));
 	} else {
 		showDomContent(e.target.dataset.setState, 'star');
+	}
+});
+
+cameraContent.addEventListener('click', function (e) {
+	switch (e.target.dataset.action) {
+		case 'CAMERA_CHANGE_FILTER':
+			changeFilter();
+			break;
+		case 'CAMERA_PHOTO':
+			cameraStop();
+			break;
+		case 'CAMERA_PAUSE_PALETTE':
+			togglePaletteUpdate;
+			break;
+		default:
+			console.log(e.target.dataset.action);
+			break;
 	}
 });
 

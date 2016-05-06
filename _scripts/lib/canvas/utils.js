@@ -6,6 +6,16 @@ function init(o) {
 	context = o.context;
 }
 
+function getContentBoxPos(el) {
+	const details = window.getComputedStyle(el, null);
+	const top = el.offsetTop + parseInt(details.paddingTop) + parseInt(details.borderTopWidth);
+	const left = el.offsetLeft + parseInt(details.paddingLeft) + parseInt(details.borderLeftWidth);
+	return {
+		top,
+		left
+	};
+}
+
 function static_initContext(canvas) {
 	const context = canvas.getContext('2d');
 	context.mozImageSmoothingEnabled = false;
@@ -136,5 +146,6 @@ export {
 	renderData,
 	imageToSprite,
 	loadImage,
-	getSpriteWithEmptyBuffer
+	getSpriteWithEmptyBuffer,
+	getContentBoxPos
 };
