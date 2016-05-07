@@ -2631,6 +2631,73 @@ if (typeof define === 'function' && define.amd) {
 
 var HAMMER = (hammer$1 && typeof hammer$1 === 'object' && 'default' in hammer$1 ? hammer$1['default'] : hammer$1);
 
+var index$1 = __commonjs(function (module) {
+module.exports = Date.now || now
+
+function now() {
+    return new Date().getTime()
+}
+});
+
+var require$$0 = (index$1 && typeof index$1 === 'object' && 'default' in index$1 ? index$1['default'] : index$1);
+
+var index = __commonjs(function (module) {
+/**
+ * Module dependencies.
+ */
+
+var now = require$$0;
+
+/**
+ * Returns a function, that, as long as it continues to be invoked, will not
+ * be triggered. The function will be called after it stops being called for
+ * N milliseconds. If `immediate` is passed, trigger the function on the
+ * leading edge, instead of the trailing.
+ *
+ * @source underscore.js
+ * @see http://unscriptable.com/2009/03/20/debouncing-javascript-methods/
+ * @param {Function} function to wrap
+ * @param {Number} timeout in ms (`100`)
+ * @param {Boolean} whether to execute at the beginning (`false`)
+ * @api public
+ */
+
+module.exports = function debounce(func, wait, immediate){
+  var timeout, args, context, timestamp, result;
+  if (null == wait) wait = 100;
+
+  function later() {
+    var last = now() - timestamp;
+
+    if (last < wait && last > 0) {
+      timeout = setTimeout(later, wait - last);
+    } else {
+      timeout = null;
+      if (!immediate) {
+        result = func.apply(context, args);
+        if (!timeout) context = args = null;
+      }
+    }
+  };
+
+  return function debounced() {
+    context = this;
+    args = arguments;
+    timestamp = now();
+    var callNow = immediate && !timeout;
+    if (!timeout) timeout = setTimeout(later, wait);
+    if (callNow) {
+      result = func.apply(context, args);
+      context = args = null;
+    }
+
+    return result;
+  };
+};
+});
+
+var debounce = (index && typeof index === 'object' && 'default' in index ? index['default'] : index);
+
 var Tween = __commonjs(function (module, exports, global) {
 /**
  * Tween.js - Licensed under the MIT license
@@ -5533,9 +5600,11 @@ function setSizes() {
 		height: viewFinderEl.offsetHeight
 	};
 
-	rerenderAllMenuContent();
+	rerenderAllMenuContent().then(function () {
+		return window.stale = true;
+	});
 }
-window.addEventListener('resize', setSizes);
+window.addEventListener('resize', debounce(setSizes, 400));
 setSizes();
 setSizes();
 

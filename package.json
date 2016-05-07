@@ -28,5 +28,8 @@
     "tinycolor2": "^1.3.0",
     "tween.js": "^16.3.4",
     "uglifyjs": "^2.4.10"
+  },
+  "dependencies": {
+    "debounce": "^1.0.0"
   }
 }

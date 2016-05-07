@@ -1,6 +1,7 @@
 'use strict'; //eslint-disable-line
 
 import HAMMER from 'hammerjs';
+import debounce from 'debounce';
 import TWEEN from 'tween.js';
 import addScript from './lib/add-script';
 import {init as initSVGRender} from './lib/canvas/svg-render';
@@ -105,9 +106,10 @@ function setSizes() {
 		height: viewFinderEl.offsetHeight
 	};
 
-	rerenderAllMenuContent();
+	rerenderAllMenuContent()
+	.then(() => window.stale = true);
 }
-window.addEventListener('resize', setSizes);
+window.addEventListener('resize', debounce(setSizes, 400));
 setSizes();
 setSizes();
 
