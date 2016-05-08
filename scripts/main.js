@@ -5458,7 +5458,7 @@ function splitPageAtLogo() {
 }
 
 function renderLogo() {
-	return Promise.all([rasterDOM('<div class="logo" data-first="GAMEGIRL" style="font-size: 15vw;"></div>'), rasterDOM('<div class="logo" data-second="SELFIES" style="font-size: 15vw;"></div>')]).then(function (_ref) {
+	return Promise.all([rasterDOM('<div class="logo" data-first="GAMEGIRL" style="font-size: 15vmin;"></div>'), rasterDOM('<div class="logo" data-second="SELFIES" style="font-size: 15vmin;"></div>')]).then(function (_ref) {
 		var _ref2 = babelHelpers.slicedToArray(_ref, 2);
 
 		var logo1 = _ref2[0];

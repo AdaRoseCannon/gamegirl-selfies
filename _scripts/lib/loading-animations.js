@@ -147,8 +147,8 @@ function splitPageAtLogo() {
 
 function renderLogo() {
 	return Promise.all([
-		rasterDOM('<div class="logo" data-first="GAMEGIRL" style="font-size: 15vw;"></div>'),
-		rasterDOM('<div class="logo" data-second="SELFIES" style="font-size: 15vw;"></div>')
+		rasterDOM('<div class="logo" data-first="GAMEGIRL" style="font-size: 15vmin;"></div>'),
+		rasterDOM('<div class="logo" data-second="SELFIES" style="font-size: 15vmin;"></div>')
 	]).then(function ([logo1, logo2]) {
 		sprites.logo1 = logo1;
 		sprites.logo2 = logo2;
