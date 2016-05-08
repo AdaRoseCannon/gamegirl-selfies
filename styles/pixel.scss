@@ -58,6 +58,9 @@ svg foreignObject div {
 		font-size: 8px;
 		border-radius: 2em;
 		padding: 0.2em 0.5em 0;
+		-moz-user-select: none;
+		-webkit-user-select: none;
+		-ms-user-select: none;
 	}
 }
 
