@@ -1,5 +1,6 @@
 /* global ColorThief, MediaDevices*/
 import color from 'tinycolor2';
+import * as gif from './save-gif.js';
 
 function vectorToColor([r,g,b]) {
 	const col = color({r,g,b});
