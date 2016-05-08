@@ -5596,7 +5596,7 @@ function doRender() {
 	}
 }
 
-var assetPromise = Promise.all([addScript('scripts/color-thief.js')(), addScript('scripts/Animated_GIF.min.js')(), addScript('scripts/pep.umd.js')()]);
+var assetPromise = Promise.all([addScript('scripts/color-thief.js')(), addScript('scripts/Animated_GIF.min.js')()]);
 
 var pixelScale = 2;
 var w = 0;
