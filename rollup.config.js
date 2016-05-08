@@ -13,7 +13,11 @@ export default {
 		commonjs({
 			include: 'node_modules/**'
 		}),
-		json(),
+		json({
+     		include: [
+				 'node_modules/**'
+			 ],
+		}),
 		babel({
 			exclude: 'node_modules/**',
 			presets: [ 'es2015-rollup' ]

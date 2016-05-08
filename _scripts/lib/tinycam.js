@@ -24,7 +24,28 @@ let postPalette = false;
 let paletteInterval;
 let currentFilter;
 let stopFunc;
+let recording = false;
+let paletteNeedsUpdate = true;
+
 currentFilter = 0;
+
+function startRecording() {
+	if (recording) {
+		throw Error('Already Recording');
+	}
+	if (!palette || !palette.length) {
+		throw Error('Camera not ready yet.');
+	}
+	if (paletteInterval) togglePaletteUpdate();
+	gif.startRecording(palette.map(c => parseInt(c.toHex(), 16)));
+	recording = true;
+}
+
+function stopRecording() {
+	if (!paletteInterval) togglePaletteUpdate();
+	recording = false;
+	return gif.stopRecording();
+}
 
 const filters = [
 	{
@@ -74,7 +95,7 @@ function distance(threeVA, x,y,z) {
 	return dx*dx + dy*dy + dz*dz;
 }
 
-function render(updatePalette) {
+function render() {
 	if (!started) throw Error('camera not started');
 	const h = video.videoHeight;
 	const w = video.videoWidth;
@@ -85,9 +106,11 @@ function render(updatePalette) {
 	context.drawImage(video, (size - width)/2, (size - height)/2, width, height);
 	const data = context.getImageData(0,0,size,size);
 
-	if (!palette || updatePalette) {
-		const paletteArr = ColorThief.getPaletteFromCanvas(data, 12);
+	if (!palette || paletteNeedsUpdate) {
+		const paletteArr = ColorThief.getPaletteFromCanvas(data, 17);
+		paletteArr.splice(16);
 		if (paletteArr) {
+			paletteNeedsUpdate = false;
 			palette = processPalette(paletteArr);
 
 			const filter = filters[currentFilter];
@@ -116,6 +139,7 @@ function render(updatePalette) {
 	}
 
 	window.stale = true;
+	if (recording) gif.receiveFrame(data);
 	return canvas;
 }
 
@@ -131,7 +155,7 @@ function start() {
 			started = true;
 
 			// update palette every 2 seconds
-			paletteInterval = setInterval(() => render(true), 2000);
+			paletteInterval = setInterval(() => paletteNeedsUpdate = true, 2000);
 
 			function stop() {
 
@@ -162,7 +186,7 @@ function stop() {
 
 function togglePaletteUpdate() {
 	if (!paletteInterval) {
-		paletteInterval = setInterval(() => render(true), 2000);
+		paletteInterval = setInterval(() => paletteNeedsUpdate = true, 2000);
 		return true;
 	} else {
 		clearTimeout(paletteInterval);
@@ -183,6 +207,8 @@ function changeFilter() {
 export {
 	start,
 	stop,
+	startRecording,
+	stopRecording,
 	render,
 	isCameraOn,
 	togglePaletteUpdate,

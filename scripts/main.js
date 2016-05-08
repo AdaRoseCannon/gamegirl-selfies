@@ -58,7 +58,7 @@ babelHelpers.toConsumableArray = function (arr) {
 
 babelHelpers;
 
-var hammer$1 = __commonjs(function (module) {
+var hammer = __commonjs(function (module) {
 /*! Hammer.JS - v2.0.6 - 2015-12-23
  * http://hammerjs.github.io/
  *
@@ -2629,7 +2629,7 @@ if (typeof define === 'function' && define.amd) {
 })(window, document, 'Hammer');
 });
 
-var HAMMER = (hammer$1 && typeof hammer$1 === 'object' && 'default' in hammer$1 ? hammer$1['default'] : hammer$1);
+var HAMMER = (hammer && typeof hammer === 'object' && 'default' in hammer ? hammer['default'] : hammer);
 
 var index$1 = __commonjs(function (module) {
 module.exports = Date.now || now
@@ -3611,7 +3611,7 @@ function addScript(url) {
 var sizes$1 = void 0;
 var context$1 = void 0;
 
-function init$1(o) {
+function init$2(o) {
 	sizes$1 = o.sizes;
 	context$1 = o.context;
 }
@@ -3766,7 +3766,7 @@ var w$1 = void 0;
 var h$1 = void 0;
 var hasInit = false;
 
-function init(_ref) {
+function init$1(_ref) {
 	var sizes = _ref.sizes;
 
 	w$1 = sizes.screen.width;
@@ -5078,6 +5078,45 @@ else {
 
 var color = (tinycolor && typeof tinycolor === 'object' && 'default' in tinycolor ? tinycolor['default'] : tinycolor);
 
+/* global Animated_GIF */
+
+var recording$1 = false;
+var ag = void 0;
+
+function receiveFrame(data) {
+	if (recording$1) {
+		console.log('adding frame');
+		ag.addFrameImageData(data);
+	}
+}
+
+function startRecording$1(palette) {
+	if (recording$1) throw Error('Already recording');
+	recording$1 = true;
+	ag = new Animated_GIF({
+		workerPath: 'scripts/Animated_GIF.worker.min.js',
+		palette: palette,
+		dithering: 'closest',
+		useQuantizer: false
+	});
+	ag.setDelay(0.032);
+	ag.setSize(96, 96);
+	ag.onRenderProgress(function (a) {
+		console.log(ag.isRendering(), a);
+	});
+}
+
+function stopRecording$1() {
+	return new Promise(function (resolve) {
+		return ag.getBase64GIF(resolve);
+	}).then(function (href) {
+		ag.destroy();
+		recording$1 = false;
+		ag = null;
+		return href;
+	});
+}
+
 function vectorToColor(_ref) {
 	var _ref2 = babelHelpers.slicedToArray(_ref, 3);
 
@@ -5106,7 +5145,30 @@ var postPalette = false;
 var paletteInterval = void 0;
 var currentFilter = void 0;
 var stopFunc = void 0;
+var recording = false;
+var paletteNeedsUpdate = true;
+
 currentFilter = 0;
+
+function startRecording() {
+	if (recording) {
+		throw Error('Already Recording');
+	}
+	if (!palette || !palette.length) {
+		throw Error('Camera not ready yet.');
+	}
+	if (paletteInterval) togglePaletteUpdate();
+	startRecording$1(palette.map(function (c) {
+		return parseInt(c.toHex(), 16);
+	}));
+	recording = true;
+}
+
+function stopRecording() {
+	if (!paletteInterval) togglePaletteUpdate();
+	recording = false;
+	return stopRecording$1();
+}
 
 var filters = [{
 	name: '#noFilter'
@@ -5157,7 +5219,7 @@ function distance(threeVA, x, y, z) {
 	return dx * dx + dy * dy + dz * dz;
 }
 
-function render(updatePalette) {
+function render() {
 	if (!started) throw Error('camera not started');
 	var h = video.videoHeight;
 	var w = video.videoWidth;
@@ -5168,10 +5230,12 @@ function render(updatePalette) {
 	context$3.drawImage(video, (size - width) / 2, (size - height) / 2, width, height);
 	var data = context$3.getImageData(0, 0, size, size);
 
-	if (!palette || updatePalette) {
-		var paletteArr = ColorThief.getPaletteFromCanvas(data, 12);
+	if (!palette || paletteNeedsUpdate) {
+		var paletteArr = ColorThief.getPaletteFromCanvas(data, 17);
+		paletteArr.splice(16);
 		if (paletteArr) {
 			(function () {
+				paletteNeedsUpdate = false;
 				palette = processPalette(paletteArr);
 
 				var filter = filters[currentFilter];
@@ -5217,6 +5281,7 @@ function render(updatePalette) {
 	}
 
 	window.stale = true;
+	if (recording) receiveFrame(data);
 	return canvas$1;
 }
 
@@ -5233,7 +5298,7 @@ function start() {
 
 			// update palette every 2 seconds
 			paletteInterval = setInterval(function () {
-				return render(true);
+				return paletteNeedsUpdate = true;
 			}, 2000);
 
 			function stop() {
@@ -5265,7 +5330,7 @@ function stop() {
 function togglePaletteUpdate() {
 	if (!paletteInterval) {
 		paletteInterval = setInterval(function () {
-			return render(true);
+			return paletteNeedsUpdate = true;
 		}, 2000);
 		return true;
 	} else {
@@ -5299,7 +5364,7 @@ var sprites$1 = void 0;
 var sizes$2 = void 0;
 var context$2 = void 0;
 
-function init$2(options) {
+function init$3(options) {
 	sizes$2 = options.sizes;
 	sprites$1 = options.sprites;
 	context$2 = options.context;
@@ -5531,7 +5596,7 @@ function doRender() {
 	}
 }
 
-var assetPromise = Promise.all([addScript('scripts/color-thief.js')()]);
+var assetPromise = Promise.all([addScript('scripts/color-thief.js')(), addScript('scripts/Animated_GIF.min.js')(), addScript('scripts/pep.umd.js')()]);
 
 var pixelScale = 2;
 var w = 0;
@@ -5573,16 +5638,18 @@ function setSizes() {
 
 	context = static_initContext(canvas);
 
+	sizes.pixelScale = pixelScale;
+
 	sizes.screen = {
 		width: w,
 		height: h
 	};
 
-	(function init$$() {
+	(function init() {
 		var initOptions = { context: context, sprites: sprites, sizes: sizes };
-		init(initOptions);
 		init$1(initOptions);
 		init$2(initOptions);
+		init$3(initOptions);
 	})();
 
 	[].slice.call(document.querySelectorAll('.dummy-for-render')).forEach(function (el) {
@@ -5609,42 +5676,6 @@ window.addEventListener('resize', debounce(setSizes, 400));
 setSizes();
 setSizes();
 
-var hammer = new HAMMER(canvas);
-var tempVars = {};
-hammer.on('pan', function (event) {
-	switch (window.state) {
-		case 'SPLASH':
-			if (event.isFirst) {
-				if (tempVars.splashTween) tempVars.splashTween.stop();
-			} else if (!event.isFinal) {
-				sprites.text.dx = event.deltaX / pixelScale;
-				window.stale = true;
-			} else if (event.isFinal) {
-				(function () {
-					var endPos = Math.round(sprites.text.dx / w) * w * 2;
-					if (endPos !== 0) {
-
-						start();
-						showDomContent('CAMERA');
-
-						clear(undefined, { context: sprites.buffers.buffer1.context });
-						new TWEEN.Tween(sprites.bg).to({ opacity: 0 }).easing(TWEEN.Easing.Quadratic.Out).onUpdate(function () {
-							return window.stale = true;
-						}).start();
-					}
-					tempVars.splashTween = new TWEEN.Tween(sprites.text).to({ dx: endPos }, 1200).easing(endPos === 0 ? TWEEN.Easing.Elastic.Out : TWEEN.Easing.Quadratic.Out).onUpdate(function () {
-						return window.stale = true;
-					}).onComplete(function () {
-						if (endPos === 0) return;
-						delete sprites.bg;
-						delete sprites.text;
-					}).start();
-				})();
-			}
-			break;
-	}
-});
-
 function showDomContent(name, wipe) {
 	var wipes = {
 		star: animateStarWipe
@@ -5670,41 +5701,100 @@ function showDomContent(name, wipe) {
 	});
 }
 
-menuContent.addEventListener('click', function (e) {
-	if (!e.target.dataset.setState) return;
-
-	if (e.target.dataset.setState === 'CAMERA') {
-		start().then(render).then(function () {
-			return showDomContent('CAMERA', 'star');
-		});
-	} else {
-		showDomContent(e.target.dataset.setState, 'star');
-	}
-});
-
 function downloadPhoto(link, canvas, filename) {
 	link.href = canvas.toDataURL();
 	link.download = filename;
 }
 
-cameraContent.addEventListener('click', function (e) {
-	switch (e.target.dataset.action) {
-		case 'CAMERA_CHANGE_FILTER':
-			changeFilter();
-			break;
-		case 'CAMERA_PHOTO':
-			downloadPhoto(e.target, render(), 'photo.png');
-			stop();
-			setTimeout(start, 2000);
-			break;
-		case 'CAMERA_PAUSE_PALETTE':
-			togglePaletteUpdate;
-			break;
-		default:
-			console.log(e.target.dataset.action);
-			break;
+function init() {
+
+	var hammer = new HAMMER(canvas);
+	var tempVars = {};
+	hammer.on('pan', function (event) {
+		switch (window.state) {
+			case 'SPLASH':
+				if (event.isFirst) {
+					if (tempVars.splashTween) tempVars.splashTween.stop();
+				} else if (!event.isFinal) {
+					sprites.text.dx = event.deltaX / pixelScale;
+					window.stale = true;
+				} else if (event.isFinal) {
+					(function () {
+						var endPos = Math.round(sprites.text.dx / w) * w * 2;
+						if (endPos !== 0) {
+
+							start();
+							showDomContent('CAMERA');
+
+							clear(undefined, { context: sprites.buffers.buffer1.context });
+							new TWEEN.Tween(sprites.bg).to({ opacity: 0 }).easing(TWEEN.Easing.Quadratic.Out).onUpdate(function () {
+								return window.stale = true;
+							}).start();
+						}
+						tempVars.splashTween = new TWEEN.Tween(sprites.text).to({ dx: endPos }, 1200).easing(endPos === 0 ? TWEEN.Easing.Elastic.Out : TWEEN.Easing.Quadratic.Out).onUpdate(function () {
+							return window.stale = true;
+						}).onComplete(function () {
+							if (endPos === 0) return;
+							delete sprites.bg;
+							delete sprites.text;
+						}).start();
+					})();
+				}
+				break;
+		}
+	});
+
+	menuContent.addEventListener('click', function (e) {
+		if (!e.target.dataset.setState) return;
+
+		if (e.target.dataset.setState === 'CAMERA') {
+			start().then(render).then(function () {
+				return showDomContent('CAMERA', 'star');
+			});
+		} else {
+			showDomContent(e.target.dataset.setState, 'star');
+		}
+	});
+
+	var recButton = cameraContent.querySelector('a[data-action="CAMERA_GIF"]');
+	function stopAndDownload() {
+		console.log('Downloading');
+		stopRecording().then(function (href) {
+			console.log(href);
+			recButton.href = href;
+			recButton.download = 'selfie.gif';
+			recButton.click();
+		}).catch(function (e) {
+			throw e;
+		});
 	}
-});
+
+	recButton.addEventListener('mousedown', startRecording);
+	recButton.addEventListener('touchdown', startRecording);
+	recButton.addEventListener('mouseup', stopAndDownload);
+	recButton.addEventListener('touchend', stopAndDownload);
+	recButton.addEventListener('mousecancel', stopRecording);
+	recButton.addEventListener('touchcancel', stopRecording);
+
+	cameraContent.addEventListener('click', function (e) {
+		switch (e.target.dataset.action) {
+			case 'CAMERA_CHANGE_FILTER':
+				changeFilter();
+				break;
+			case 'CAMERA_PHOTO':
+				downloadPhoto(e.target, render(), 'photo.png');
+				stop();
+				setTimeout(start, 2000);
+				break;
+			case 'CAMERA_PAUSE_PALETTE':
+				togglePaletteUpdate;
+				break;
+			default:
+				console.log(e.target.dataset.action);
+				break;
+		}
+	});
+}
 
 new Promise(function (resolve) {
 	window.addEventListener('load', function onload() {
@@ -5717,7 +5807,7 @@ new Promise(function (resolve) {
 	});
 }).then(startAnimLoop).then(function () {
 	return Promise.all([renderBgAndMessage(), renderStarWipe(), animateLogoIn(), assetPromise]);
-}).then(function () {
+}).then(init).then(function () {
 	return window.state = 'SPLASH';
 }).then(function () {
 	return Promise.all([splitPageAtLogo()]);

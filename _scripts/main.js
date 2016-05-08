@@ -5,6 +5,7 @@ import debounce from 'debounce';
 import TWEEN from 'tween.js';
 import addScript from './lib/add-script';
 import {init as initSVGRender} from './lib/canvas/svg-render';
+
 import {
 	renderBgAndMessage,
 	startAnimLoop,
@@ -30,10 +31,13 @@ import {
 	stop as cameraStop,
 	togglePaletteUpdate,
 	changeFilter,
+	startRecording,
+	stopRecording
 } from './lib/tinycam.js';
 
 const assetPromise = Promise.all([
-	addScript('scripts/color-thief.js')()
+	addScript('scripts/color-thief.js')(),
+	addScript('scripts/Animated_GIF.min.js')()
 ]);
 
 
@@ -77,6 +81,8 @@ function setSizes() {
 
 	context = static_initContext(canvas);
 
+	sizes.pixelScale = pixelScale;
+
 	sizes.screen = {
 		width: w,
 		height: h
@@ -113,45 +119,6 @@ window.addEventListener('resize', debounce(setSizes, 400));
 setSizes();
 setSizes();
 
-const hammer = new HAMMER(canvas);
-const tempVars = {};
-hammer.on('pan', function(event) {
-	switch (window.state) {
-		case 'SPLASH':
-			if (event.isFirst) {
-				if (tempVars.splashTween) tempVars.splashTween.stop();
-			} else if (!event.isFinal) {
-				sprites.text.dx = event.deltaX/pixelScale;
-				window.stale = true;
-			} else if (event.isFinal) {
-				const endPos = Math.round(sprites.text.dx/w) * w * 2;
-				if (endPos !== 0) {
-
-					startCamera();
-					showDomContent('CAMERA');
-
-					clear(undefined, {context: sprites.buffers.buffer1.context});
-					new TWEEN.Tween(sprites.bg)
-					.to({ opacity: 0 })
-					.easing(TWEEN.Easing.Quadratic.Out)
-					.onUpdate(() => window.stale = true)
-					.start();
-				}
-				tempVars.splashTween = new TWEEN.Tween(sprites.text)
-				.to({ dx: endPos }, 1200)
-				.easing(endPos === 0 ? TWEEN.Easing.Elastic.Out : TWEEN.Easing.Quadratic.Out)
-				.onUpdate(() => window.stale = true)
-				.onComplete(() => {
-					if (endPos === 0) return;
-					delete sprites.bg;
-					delete sprites.text;
-				})
-				.start();
-			}
-			break;
-	}
-});
-
 function showDomContent(name, wipe) {
 	const wipes = {
 		star: animateStarWipe
@@ -178,41 +145,105 @@ function showDomContent(name, wipe) {
 	});
 }
 
-menuContent.addEventListener('click', function (e) {
-	if (!e.target.dataset.setState) return;
-
-	if (e.target.dataset.setState === 'CAMERA') {
-		startCamera()
-		.then(renderCamera)
-		.then(() => showDomContent('CAMERA', 'star'));
-	} else {
-		showDomContent(e.target.dataset.setState, 'star');
-	}
-});
-
 function downloadPhoto(link, canvas, filename) {
-    link.href = canvas.toDataURL();
-    link.download = filename;
+	link.href = canvas.toDataURL();
+	link.download = filename;
 }
 
-cameraContent.addEventListener('click', function (e) {
-	switch (e.target.dataset.action) {
-		case 'CAMERA_CHANGE_FILTER':
-			changeFilter();
-			break;
-		case 'CAMERA_PHOTO':
-			downloadPhoto(e.target, renderCamera(), 'photo.png');
-			cameraStop();
-			setTimeout(startCamera, 2000);
-			break;
-		case 'CAMERA_PAUSE_PALETTE':
-			togglePaletteUpdate;
-			break;
-		default:
-			console.log(e.target.dataset.action);
-			break;
+function init() {
+
+	const hammer = new HAMMER(canvas);
+	const tempVars = {};
+	hammer.on('pan', function(event) {
+		switch (window.state) {
+			case 'SPLASH':
+				if (event.isFirst) {
+					if (tempVars.splashTween) tempVars.splashTween.stop();
+				} else if (!event.isFinal) {
+					sprites.text.dx = event.deltaX/pixelScale;
+					window.stale = true;
+				} else if (event.isFinal) {
+					const endPos = Math.round(sprites.text.dx/w) * w * 2;
+					if (endPos !== 0) {
+
+						startCamera();
+						showDomContent('CAMERA');
+
+						clear(undefined, {context: sprites.buffers.buffer1.context});
+						new TWEEN.Tween(sprites.bg)
+						.to({ opacity: 0 })
+						.easing(TWEEN.Easing.Quadratic.Out)
+						.onUpdate(() => window.stale = true)
+						.start();
+					}
+					tempVars.splashTween = new TWEEN.Tween(sprites.text)
+					.to({ dx: endPos }, 1200)
+					.easing(endPos === 0 ? TWEEN.Easing.Elastic.Out : TWEEN.Easing.Quadratic.Out)
+					.onUpdate(() => window.stale = true)
+					.onComplete(() => {
+						if (endPos === 0) return;
+						delete sprites.bg;
+						delete sprites.text;
+					})
+					.start();
+				}
+				break;
+		}
+	});
+
+	menuContent.addEventListener('click', function (e) {
+		if (!e.target.dataset.setState) return;
+
+		if (e.target.dataset.setState === 'CAMERA') {
+			startCamera()
+			.then(renderCamera)
+			.then(() => showDomContent('CAMERA', 'star'));
+		} else {
+			showDomContent(e.target.dataset.setState, 'star');
+		}
+	});
+
+	const recButton = cameraContent.querySelector('a[data-action="CAMERA_GIF"]');
+	function stopAndDownload() {
+		console.log('Downloading');
+		stopRecording()
+		.then(function (href) {
+			console.log(href);
+			recButton.href = href;
+			recButton.download = 'selfie.gif';
+			recButton.click();
+		})
+		.catch(e => {
+			throw e;
+		});
 	}
-});
+
+	recButton.addEventListener('mousedown', startRecording);
+	recButton.addEventListener('touchdown', startRecording);
+	recButton.addEventListener('mouseup', stopAndDownload);
+	recButton.addEventListener('touchend', stopAndDownload);
+	recButton.addEventListener('mousecancel', stopRecording);
+	recButton.addEventListener('touchcancel', stopRecording);
+
+	cameraContent.addEventListener('click', function (e) {
+		switch (e.target.dataset.action) {
+			case 'CAMERA_CHANGE_FILTER':
+				changeFilter();
+				break;
+			case 'CAMERA_PHOTO':
+				downloadPhoto(e.target, renderCamera(), 'photo.png');
+				cameraStop();
+				setTimeout(startCamera, 2000);
+				break;
+			case 'CAMERA_PAUSE_PALETTE':
+				togglePaletteUpdate;
+				break;
+			default:
+				console.log(e.target.dataset.action);
+				break;
+		}
+	});
+}
 
 new Promise(function (resolve) {
 	window.addEventListener('load', function onload() {
@@ -229,6 +260,7 @@ new Promise(function (resolve) {
 	animateLogoIn(),
 	assetPromise
 ]))
+.then(init)
 .then(() => window.state = 'SPLASH')
 .then(() => Promise.all([
 	splitPageAtLogo()
@@ -242,4 +274,3 @@ new Promise(function (resolve) {
 .catch(e => {
 	throw e;
 });
-
