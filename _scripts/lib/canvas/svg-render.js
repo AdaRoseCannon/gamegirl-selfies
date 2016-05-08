@@ -82,8 +82,9 @@ function rasterDOM(dom) {
 				const details = tracking.get(el);
 				el.style.left = details.left + 'px';
 				el.style.top = details.top + 'px';
-				el.style.width = details.width + 'px';
-				el.style.height = details.height + 'px';
+				el.style.margin = 0;
+				// el.style.width = details.width + 'px';
+				// el.style.height = details.height + 'px';
 			});
 		}
 

@@ -190,13 +190,20 @@ menuContent.addEventListener('click', function (e) {
 	}
 });
 
+function downloadPhoto(link, canvas, filename) {
+    link.href = canvas.toDataURL();
+    link.download = filename;
+}
+
 cameraContent.addEventListener('click', function (e) {
 	switch (e.target.dataset.action) {
 		case 'CAMERA_CHANGE_FILTER':
 			changeFilter();
 			break;
 		case 'CAMERA_PHOTO':
+			downloadPhoto(e.target, renderCamera(), 'photo.png');
 			cameraStop();
+			setTimeout(startCamera, 2000);
 			break;
 		case 'CAMERA_PAUSE_PALETTE':
 			togglePaletteUpdate;

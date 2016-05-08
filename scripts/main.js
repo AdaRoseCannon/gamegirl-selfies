@@ -3850,8 +3850,9 @@ function rasterDOM(dom) {
 						var details = tracking.get(el);
 						el.style.left = details.left + 'px';
 						el.style.top = details.top + 'px';
-						el.style.width = details.width + 'px';
-						el.style.height = details.height + 'px';
+						el.style.margin = 0;
+						// el.style.width = details.width + 'px';
+						// el.style.height = details.height + 'px';
 					});
 				})();
 			}
@@ -5681,13 +5682,20 @@ menuContent.addEventListener('click', function (e) {
 	}
 });
 
+function downloadPhoto(link, canvas, filename) {
+	link.href = canvas.toDataURL();
+	link.download = filename;
+}
+
 cameraContent.addEventListener('click', function (e) {
 	switch (e.target.dataset.action) {
 		case 'CAMERA_CHANGE_FILTER':
 			changeFilter();
 			break;
 		case 'CAMERA_PHOTO':
+			downloadPhoto(e.target, render(), 'photo.png');
 			stop();
+			setTimeout(start, 2000);
 			break;
 		case 'CAMERA_PAUSE_PALETTE':
 			togglePaletteUpdate;
