@@ -28,10 +28,7 @@ function static_initContext(canvas) {
 function fill(fillStyle, options = {}) {
 	const ctx = (options.context || context);
 
-	// backup old state
-	const oldComposite = ctx.globalCompositeOperation;
-	const oldAlpha = ctx.globalAlpha;
-	const oldFillStyle = ctx.fillStyle;
+	ctx.save();
 
 	// set fill style
 	ctx.globalCompositeOperation = options.composite || 'source-over';
@@ -43,26 +40,25 @@ function fill(fillStyle, options = {}) {
 	ctx.fillStyle = fillStyle;
 
 	// Draw
+	ctx.beginPath();
 	ctx.rect(0, 0, sizes.screen.width, sizes.screen.height);
 	ctx.fill();
 
 	// reset
-	ctx.fillStyle = oldFillStyle;
-	ctx.globalAlpha = oldAlpha;
-	ctx.globalCompositeOperation = oldComposite;
+	ctx.restore();
 }
 
 function clear(fillStyle, options = {}) {
-	(options.context || context).clearRect(0, 0, sizes.screen.width, sizes.screen.height);
+	const ctx = (options.context || context);
+	ctx.save();
+	ctx.clearRect(0, 0, sizes.screen.width, sizes.screen.height);
 	if (fillStyle) fill(fillStyle);
+	ctx.restore();
 }
 
 function renderData(options = {}) {
 	const ctx = options.context || context;
-
-	// backup old state
-	const oldComposite = ctx.globalCompositeOperation;
-	const oldAlpha = ctx.globalAlpha;
+	ctx.save();
 
 	// set fill style
 	ctx.globalCompositeOperation = options.composite || 'source-over';
@@ -76,8 +72,7 @@ function renderData(options = {}) {
 
 	ctx.drawImage(this.buffer, this.x + (this.dx || 0), this.y + (this.dy || 0));
 
-	ctx.globalAlpha = oldAlpha;
-	ctx.globalCompositeOperation = oldComposite;
+	ctx.restore();
 }
 
 function Buffer(width = sizes.screen.width, height = sizes.screen.height) {

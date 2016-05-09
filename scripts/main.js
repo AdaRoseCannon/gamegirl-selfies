@@ -3640,10 +3640,7 @@ function fill(fillStyle) {
 
 	var ctx = options.context || context$1;
 
-	// backup old state
-	var oldComposite = ctx.globalCompositeOperation;
-	var oldAlpha = ctx.globalAlpha;
-	var oldFillStyle = ctx.fillStyle;
+	ctx.save();
 
 	// set fill style
 	ctx.globalCompositeOperation = options.composite || 'source-over';
@@ -3655,30 +3652,29 @@ function fill(fillStyle) {
 	ctx.fillStyle = fillStyle;
 
 	// Draw
+	ctx.beginPath();
 	ctx.rect(0, 0, sizes$1.screen.width, sizes$1.screen.height);
 	ctx.fill();
 
 	// reset
-	ctx.fillStyle = oldFillStyle;
-	ctx.globalAlpha = oldAlpha;
-	ctx.globalCompositeOperation = oldComposite;
+	ctx.restore();
 }
 
 function clear(fillStyle) {
 	var options = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 
-	(options.context || context$1).clearRect(0, 0, sizes$1.screen.width, sizes$1.screen.height);
+	var ctx = options.context || context$1;
+	ctx.save();
+	ctx.clearRect(0, 0, sizes$1.screen.width, sizes$1.screen.height);
 	if (fillStyle) fill(fillStyle);
+	ctx.restore();
 }
 
 function renderData() {
 	var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
 
 	var ctx = options.context || context$1;
-
-	// backup old state
-	var oldComposite = ctx.globalCompositeOperation;
-	var oldAlpha = ctx.globalAlpha;
+	ctx.save();
 
 	// set fill style
 	ctx.globalCompositeOperation = options.composite || 'source-over';
@@ -3692,8 +3688,7 @@ function renderData() {
 
 	ctx.drawImage(this.buffer, this.x + (this.dx || 0), this.y + (this.dy || 0));
 
-	ctx.globalAlpha = oldAlpha;
-	ctx.globalCompositeOperation = oldComposite;
+	ctx.restore();
 }
 
 function Buffer() {
@@ -5397,18 +5392,12 @@ function animateLogoIn() {
 }
 
 function renderBgAndMessage() {
-	return Promise.all([rasterDOM('<span class="swipe">&lt; SWIPE &gt;</span>'), imageToSprite('images/temp.jpg')]).then(function (detail) {
+	return Promise.all([rasterDOM('<span class="swipe">&lt; SWIPE &gt;</span>'), imageToSprite('images/splash.png')]).then(function (detail) {
 
 		var text = detail[0];
 		var bg = detail[1];
-
 		sprites$1.text = text;
-		text.x = (sizes$2.screen.width - text.width) / 2;
-		text.y = (sizes$2.screen.height - text.height) / 2;
-
 		sprites$1.bg = bg;
-		bg.x = (sizes$2.screen.width - bg.width) / 2;
-		bg.y = Math.max((sizes$2.screen.height - bg.height) / 2, 0);
 		bg.opacity = 1;
 	});
 }
@@ -5479,6 +5468,7 @@ function renderLogo() {
 				var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
 
 				var ctx = options.context || context$2;
+				ctx.save();
 				ctx.globalCompositeOperation = 'source-atop';
 				ctx.fillStyle = 'rgba(255,255,255,0.4)';
 				ctx.beginPath();
@@ -5487,6 +5477,7 @@ function renderLogo() {
 				ctx.lineTo(sprites$1.logo1.x + this.x + this.width, sprites$1.logo1.y + this.y + this.height);
 				ctx.lineTo(sprites$1.logo1.x + this.x + 0, sprites$1.logo1.y + this.y + this.height);
 				ctx.fill();
+				ctx.restore();
 			}
 		};
 
@@ -5560,9 +5551,26 @@ function doRender() {
 				break;
 			case 'SPLASH':
 				clear('lavenderblush');
+
 				sprites$1.bg.dx = sprites$1.text.dx * 0.6;
+				sprites$1.text.x = (sizes$2.screen.width - sprites$1.text.width) / 2;
+				sprites$1.text.y = sizes$2.screen.height / 2;
+				sprites$1.bg.x = (sizes$2.screen.width - sprites$1.bg.width) / 2;
+				sprites$1.bg.y = Math.max((sizes$2.screen.height - sprites$1.bg.height) / 2, 0);
+
 				renderSprite(sprites$1.bg);
+
+				context$2.save();
+				context$2.globalAlpha = 0.7;
+				context$2.fillStyle = 'lavenderblush';
+				context$2.beginPath();
+				context$2.rect(sprites$1.text.x + (sprites$1.text.dx || 0) - 150, sprites$1.text.y - 1, sprites$1.text.width + 300, sprites$1.text.height + 2);
+				context$2.fill();
+				context$2.globalAlpha = 1;
+				context$2.restore();
+
 				renderSprite(sprites$1.text);
+
 				if (sprites$1.pageSplitTop) {
 					renderSprite(sprites$1.pageSplitTop);
 					renderSprite(sprites$1.pageSplitBottom);
@@ -5604,12 +5612,15 @@ function doRender() {
 				}
 
 				if (isCameraOn() && window.state === 'CAMERA') {
-					context$2.drawImage(render(), sizes$2.viewfinder.left, sizes$2.viewfinder.top);
+					context$2.save();
+					context$2.scale(-1, 1);
+					context$2.drawImage(render(), -96 - sizes$2.viewfinder.left, sizes$2.viewfinder.top);
 					if (isRecording()) {
 						sprites$1.rec.x = sizes$2.viewfinder.left + 96 - 1;
 						sprites$1.rec.y = sizes$2.viewfinder.top + 96 - 1;
 						renderSprite(sprites$1.rec);
 					}
+					context$2.restore();
 					if (getProgress() !== 0 && getProgress() !== 1) {
 						console.log('rendering');
 					}
@@ -5781,23 +5792,36 @@ function init() {
 	});
 
 	var recButton = cameraContent.querySelector('a[data-action="CAMERA_GIF"]');
-	function stopAndDownload() {
+	function stopAndDownload(e) {
+		e.preventDefault();
+		e.stopPropagation();
 		console.log('Downloading');
 		stopRecording().then(function (href) {
 			recButton.href = href;
 			recButton.download = 'selfie_' + new Date().toLocaleString().replace(/[, ]+/gi, '_').replace(/[^-0-9a-z_]+/gi, '-') + '.gif';
 			recButton.click();
+			recButton.href = '';
+			recButton.download = '';
 		}).catch(function (e) {
 			throw e;
 		});
 	}
 
-	recButton.addEventListener('mousedown', startRecording);
-	recButton.addEventListener('touchdown', startRecording);
-	recButton.addEventListener('mouseup', stopAndDownload);
-	recButton.addEventListener('touchend', stopAndDownload);
-	recButton.addEventListener('mousecancel', stopRecording);
-	recButton.addEventListener('touchcancel', stopRecording);
+	function startRecordingFn(e) {
+		e.preventDefault();
+		e.stopPropagation();
+		startRecording();
+	}
+
+	recButton.addEventListener("contextmenu", function (e) {
+		e.preventDefault();
+	});
+	recButton.addEventListener('mousedown', startRecordingFn, true);
+	recButton.addEventListener('touchdown', startRecordingFn, true);
+	recButton.addEventListener('mouseup', stopAndDownload, true);
+	recButton.addEventListener('touchend', stopAndDownload, true);
+	recButton.addEventListener('mousecancel', stopRecording, true);
+	recButton.addEventListener('touchcancel', stopRecording, true);
 
 	cameraContent.addEventListener('click', function (e) {
 		switch (e.target.dataset.action) {

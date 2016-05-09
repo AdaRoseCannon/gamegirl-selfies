@@ -69,19 +69,13 @@ function animateLogoIn() {
 function renderBgAndMessage() {
 	return Promise.all([
 		rasterDOM('<span class="swipe">&lt; SWIPE &gt;</span>'),
-		imageToSprite('images/temp.jpg')
+		imageToSprite('images/splash.png')
 	]).then(detail => {
 
 		const text = detail[0];
 		const bg = detail[1];
-
 		sprites.text = text;
-		text.x = (sizes.screen.width - text.width) / 2;
-		text.y = (sizes.screen.height - text.height) / 2;
-
 		sprites.bg = bg;
-		bg.x = (sizes.screen.width - bg.width) / 2;
-		bg.y = Math.max((sizes.screen.height - bg.height) / 2, 0);
 		bg.opacity = 1;
 	});
 }
@@ -129,6 +123,7 @@ function rerenderAllMenuContent() {
 	return Promise.all(
 		Array.from(nameToDom.entries()).map(pair => renderMenuContent(pair[1], pair[0], true))
 	);
+
 }
 
 function splitPageAtLogo() {
@@ -162,6 +157,7 @@ function renderLogo() {
 
 		sprites.highlight = { x: -40 - logo1.width/2, y: -10, width: 20, height: 80, render(options = {}) {
 			const ctx = options.context || context;
+			ctx.save();
 			ctx.globalCompositeOperation = 'source-atop';
 			ctx.fillStyle = 'rgba(255,255,255,0.4)';
 			ctx.beginPath();
@@ -170,6 +166,7 @@ function renderLogo() {
 			ctx.lineTo(sprites.logo1.x + this.x + this.width, sprites.logo1.y + this.y + this.height);
 			ctx.lineTo(sprites.logo1.x + this.x + 0, sprites.logo1.y + this.y + this.height);
 			ctx.fill();
+			ctx.restore();
 		} };
 
 		logo1.x = (sizes.screen.width - logo1.width)/2;
@@ -254,9 +251,26 @@ function doRender() {
 				break;
 			case 'SPLASH':
 				clear('lavenderblush');
+
 				sprites.bg.dx = sprites.text.dx * 0.6;
+				sprites.text.x = (sizes.screen.width - sprites.text.width) / 2;
+				sprites.text.y = sizes.screen.height / 2;
+				sprites.bg.x = (sizes.screen.width - sprites.bg.width) / 2;
+				sprites.bg.y = Math.max((sizes.screen.height - sprites.bg.height) / 2, 0);
+
 				renderSprite(sprites.bg);
+
+				context.save();
+				context.globalAlpha = 0.7;
+				context.fillStyle = 'lavenderblush';
+				context.beginPath();
+				context.rect(sprites.text.x + (sprites.text.dx || 0) - 150, sprites.text.y - 1, sprites.text.width + 300, sprites.text.height + 2);
+				context.fill();
+				context.globalAlpha = 1;
+				context.restore();
+
 				renderSprite(sprites.text);
+
 				if (sprites.pageSplitTop) {
 					renderSprite(sprites.pageSplitTop);
 					renderSprite(sprites.pageSplitBottom);
@@ -298,12 +312,15 @@ function doRender() {
 				}
 
 				if (isCameraOn() && window.state === 'CAMERA') {
-					context.drawImage(renderCamera(), sizes.viewfinder.left, sizes.viewfinder.top);
+					context.save();
+					context.scale(-1, 1);
+					context.drawImage(renderCamera(), -96 - sizes.viewfinder.left, sizes.viewfinder.top);
 					if (isRecording()) {
 						sprites.rec.x = sizes.viewfinder.left + 96 - 1;
 						sprites.rec.y = sizes.viewfinder.top + 96 - 1;
 						renderSprite(sprites.rec);
 					}
+					context.restore();
 					if (getGitProgress() !== 0 && getGitProgress() !== 1) {
 						console.log('rendering');
 					}

@@ -205,25 +205,36 @@ function init() {
 	});
 
 	const recButton = cameraContent.querySelector('a[data-action="CAMERA_GIF"]');
-	function stopAndDownload() {
+	function stopAndDownload(e) {
+		e.preventDefault();
+		e.stopPropagation();
 		console.log('Downloading');
 		stopRecording()
 		.then(function (href) {
 			recButton.href = href;
 			recButton.download = `selfie_${(new Date()).toLocaleString().replace(/[, ]+/gi,'_').replace(/[^-0-9a-z_]+/gi,'-')}.gif`;
 			recButton.click();
+			recButton.href = '';
+			recButton.download = '';
 		})
 		.catch(e => {
 			throw e;
 		});
 	}
 
-	recButton.addEventListener('mousedown', startRecording);
-	recButton.addEventListener('touchdown', startRecording);
-	recButton.addEventListener('mouseup', stopAndDownload);
-	recButton.addEventListener('touchend', stopAndDownload);
-	recButton.addEventListener('mousecancel', stopRecording);
-	recButton.addEventListener('touchcancel', stopRecording);
+	function startRecordingFn(e) {
+		e.preventDefault();
+		e.stopPropagation();
+		startRecording();
+	}
+
+	recButton.addEventListener("contextmenu", function(e) { e.preventDefault() });
+	recButton.addEventListener('mousedown', startRecordingFn, true);
+	recButton.addEventListener('touchdown', startRecordingFn, true);
+	recButton.addEventListener('mouseup', stopAndDownload, true);
+	recButton.addEventListener('touchend', stopAndDownload, true);
+	recButton.addEventListener('mousecancel', stopRecording, true);
+	recButton.addEventListener('touchcancel', stopRecording, true);
 
 	cameraContent.addEventListener('click', function (e) {
 		switch (e.target.dataset.action) {
