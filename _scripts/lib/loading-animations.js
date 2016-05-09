@@ -1,7 +1,14 @@
 
 import TWEEN from 'tween.js';
 import {rasterDOM} from './canvas/svg-render';
-import {isCameraOn, render as renderCamera} from './tinycam';
+import {
+	isCameraOn,
+	render as renderCamera,
+	isRecording
+} from './tinycam';
+import {
+	getProgress as getGitProgress
+} from './save-gif';
 import {
 	grabArea,
 	imageToSprite,
@@ -172,6 +179,15 @@ function renderLogo() {
 	});
 }
 
+function renderRecLabel() {
+	return rasterDOM('<span class="rec" style="color: red;">REC</span>')
+	.then(rec => {
+		rec.dx = -rec.width;
+		rec.dy = -rec.height;
+		sprites.rec = rec;
+	});
+}
+
 function renderStarWipe() {
 	return loadStars()
 	.then(() => {
@@ -283,6 +299,14 @@ function doRender() {
 
 				if (isCameraOn() && window.state === 'CAMERA') {
 					context.drawImage(renderCamera(), sizes.viewfinder.left, sizes.viewfinder.top);
+					if (isRecording()) {
+						sprites.rec.x = sizes.viewfinder.left + 96 - 1;
+						sprites.rec.y = sizes.viewfinder.top + 96 - 1;
+						renderSprite(sprites.rec);
+					}
+					if (getGitProgress() !== 0 && getGitProgress() !== 1) {
+						console.log('rendering');
+					}
 				}
 
 				break;
@@ -301,5 +325,6 @@ export {
 	loadStars,
 	rerenderAllMenuContent,
 	renderStarWipe,
-	animateStarWipe
+	animateStarWipe,
+	renderRecLabel
 };

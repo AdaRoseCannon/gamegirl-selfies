@@ -2,10 +2,10 @@
 
 let recording = false;
 let ag;
+let progress = 0;
 
 function receiveFrame(data) {
 	if (recording) {
-		console.log('adding frame');
 		ag.addFrameImageData(data);
 	}
 }
@@ -22,7 +22,7 @@ function startRecording(palette) {
 	ag.setDelay(0.032);
 	ag.setSize(96, 96);
 	ag.onRenderProgress(a => {
-		console.log(ag.isRendering(), a);
+		progress = a;
 	});
 }
 
@@ -32,12 +32,18 @@ function stopRecording() {
 		ag.destroy();
 		recording = false;
 		ag = null;
+		progress = 0;
 		return href;
 	});
+}
+
+function getProgress() {
+	return progress;
 }
 
 export {
 	receiveFrame,
 	startRecording,
-	stopRecording
+	stopRecording,
+	getProgress
 };

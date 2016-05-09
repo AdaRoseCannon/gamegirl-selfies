@@ -16,7 +16,8 @@ import {
 	init as initAnims,
 	renderStarWipe,
 	animateStarWipe,
-	rerenderAllMenuContent
+	rerenderAllMenuContent,
+	renderRecLabel
 } from './lib/loading-animations';
 import {
 	static_initContext,
@@ -208,10 +209,9 @@ function init() {
 		console.log('Downloading');
 		stopRecording()
 		.then(function (href) {
-			console.log(href);
-			recButton.href = href;
-			recButton.download = 'selfie.gif';
-			recButton.click();
+			// recButton.href = href;
+			// recButton.download = `selfie_${(new Date()).toLocaleString().replace(/[, ]+/gi,'_').replace(/[^-0-9a-z_]+/gi,'-')}.gif`;
+			// recButton.click();
 		})
 		.catch(e => {
 			throw e;
@@ -258,6 +258,7 @@ new Promise(function (resolve) {
 	renderBgAndMessage(),
 	renderStarWipe(),
 	animateLogoIn(),
+	renderRecLabel(),
 	assetPromise
 ]))
 .then(init)

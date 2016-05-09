@@ -155,14 +155,15 @@ function start() {
 			started = true;
 
 			// update palette every 2 seconds
-			paletteInterval = setInterval(() => paletteNeedsUpdate = true, 2000);
+			if (!paletteInterval) togglePaletteUpdate();
+			paletteNeedsUpdate = true;
 
 			function stop() {
 
 				video.pause();
 				video.src = '';
 				stream.getTracks()[0].stop();
-
+				paletteInterval = null;
 				clearInterval(paletteInterval);
 				stop = null;
 			}
@@ -201,7 +202,11 @@ function isCameraOn() {
 
 function changeFilter() {
 	currentFilter = (currentFilter + 1) % filters.length;
-	render(true);
+	paletteNeedsUpdate = true;
+}
+
+function isRecording() {
+	return recording;
 }
 
 export {
@@ -209,6 +214,7 @@ export {
 	stop,
 	startRecording,
 	stopRecording,
+	isRecording,
 	render,
 	isCameraOn,
 	togglePaletteUpdate,
