@@ -8,7 +8,6 @@ import {init as initSVGRender} from './lib/canvas/svg-render';
 
 import {
 	renderBgAndMessage,
-	startAnimLoop,
 	renderMenuContent,
 	animateLogoIn,
 	splitPageAtLogo,
@@ -25,7 +24,10 @@ import {
 	init as initUtils,
 	getContentBoxPos
 } from './lib/canvas/utils';
-
+import {
+	startAnimLoop,
+	init as renderLoopInit
+} from './lib/render-loop.js';
 import {
 	start as startCamera,
 	render as renderCamera,
@@ -94,6 +96,7 @@ function setSizes() {
 		initSVGRender(initOptions);
 		initUtils(initOptions);
 		initAnims(initOptions);
+		renderLoopInit(initOptions);
 	}());
 
 	[].slice.call(document.querySelectorAll('.dummy-for-render'))
@@ -117,7 +120,6 @@ function setSizes() {
 	.then(() => window.stale = true);
 }
 window.addEventListener('resize', debounce(setSizes, 400));
-setSizes();
 setSizes();
 
 function showDomContent(name, wipe) {
@@ -228,7 +230,7 @@ function init() {
 		startRecording();
 	}
 
-	recButton.addEventListener("contextmenu", function(e) { e.preventDefault() });
+	recButton.addEventListener('contextmenu', e => e.preventDefault() );
 	recButton.addEventListener('mousedown', startRecordingFn, true);
 	recButton.addEventListener('touchdown', startRecordingFn, true);
 	recButton.addEventListener('mouseup', stopAndDownload, true);
@@ -274,9 +276,7 @@ new Promise(function (resolve) {
 ]))
 .then(init)
 .then(() => window.state = 'SPLASH')
-.then(() => Promise.all([
-	splitPageAtLogo()
-]))
+.then(splitPageAtLogo)
 .then(function () {
 	delete sprites.logo1;
 	delete sprites.logo2;
