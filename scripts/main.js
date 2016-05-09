@@ -5784,9 +5784,9 @@ function init() {
 	function stopAndDownload() {
 		console.log('Downloading');
 		stopRecording().then(function (href) {
-			// recButton.href = href;
-			// recButton.download = `selfie_${(new Date()).toLocaleString().replace(/[, ]+/gi,'_').replace(/[^-0-9a-z_]+/gi,'-')}.gif`;
-			// recButton.click();
+			recButton.href = href;
+			recButton.download = 'selfie_' + new Date().toLocaleString().replace(/[, ]+/gi, '_').replace(/[^-0-9a-z_]+/gi, '-') + '.gif';
+			recButton.click();
 		}).catch(function (e) {
 			throw e;
 		});
