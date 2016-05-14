@@ -5,6 +5,7 @@ import debounce from 'debounce';
 import TWEEN from 'tween.js';
 import addScript from './lib/add-script';
 import {init as initSVGRender} from './lib/canvas/svg-render';
+import './lib/sw';
 
 import {
 	renderBgAndMessage,

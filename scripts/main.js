@@ -3902,6 +3902,22 @@ function rasterDOM(dom) {
 	return renderPromise;
 }
 
+(function () {
+
+	if ('serviceWorker' in navigator) {
+
+		if (navigator.serviceWorker.controller) {
+			return navigator.serviceWorker.ready;
+		} else {
+
+			// Return the instantiation promise
+			return navigator.serviceWorker.register('sw.js').then(function () {
+				return navigator.serviceWorker.ready;
+			});
+		}
+	}
+})();
+
 var sprites$1 = void 0;
 var sizes$2 = void 0;
 var context$2 = void 0;

@@ -5,9 +5,10 @@
   "main": "index.js",
   "scripts": {
     "build:scripts": "mkdir -p scripts && rollup -i ./_scripts/main.js -o ./scripts/main.js -c -m && cd scripts && uglifyjs --source-map main.min.js.map -m --screw-ie8 main.js -o main.min.js && wc -c main.min.js",
+    "build:sw": "mkdir -p scripts && rollup -i ./_scripts/sw.js -o ./sw.js -c -m && uglifyjs --source-map sw.min.js.map -m --screw-ie8 sw.js -o sw.min.js && wc -c sw.min.js",
     "build:other": "mkdir -p scripts && true && cp ./node_modules/sw-toolbox/sw-toolbox.* ./scripts/ && cp ./node_modules/animated_gif/dist/* ./scripts/",
     "watch": "./parallel.sh \"npm run build:other\" \"nodemon --watch ./_scripts -e js --exec npm run build:scripts\" \"bundle exec jekyll serve\"",
-    "build": "./parallel.sh \"npm run build:other\" \"npm run build:scripts\"",
+    "build": "./parallel.sh \"npm run build:other\" \"npm run build:scripts\" \"npm run build:sw\"",
     "clean": "git clean -f",
     "install": "npm run build",
     "post install": "bundle install"
