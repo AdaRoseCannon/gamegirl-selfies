@@ -5324,6 +5324,15 @@ function getProgress() {
 	
 })();
 
+/* global ColorThief */
+var constraints = navigator.mediaDevices ? { video: true } : {
+	video: {
+		width: { ideal: size },
+		height: { ideal: size },
+		frameRate: { ideal: 30, max: 30 }
+	}
+};
+
 function vectorToColor(_ref) {
 	var _ref2 = babelHelpers.slicedToArray(_ref, 3);
 
@@ -5491,13 +5500,7 @@ function render() {
 }
 
 function start() {
-	return navigator.mediaDevices.getUserMedia({
-		video: {
-			width: { ideal: size },
-			height: { ideal: size },
-			frameRate: { ideal: 30, max: 30 }
-		}
-	}).then(function (stream) {
+	return navigator.mediaDevices.getUserMedia(constraints).then(function (stream) {
 
 		started = true;
 
@@ -5518,9 +5521,13 @@ function start() {
 		stopFunc = stop;
 
 		video.src = window.URL.createObjectURL(stream);
-		video.play();
 
-		return stop;
+		return new Promise(function (resolve) {
+			video.onload = resolve;
+		}).then(function () {
+			video.onload = function () {};
+			return stop;
+		});
 	});
 }
 

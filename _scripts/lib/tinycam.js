@@ -1,4 +1,12 @@
 /* global ColorThief */
+const constraints = navigator.mediaDevices ? { video: true } : {
+	video: {
+		width: {ideal: size},
+		height: {ideal: size},
+		frameRate: { ideal: 30, max: 30 }
+	},
+};
+
 import color from 'tinycolor2';
 import * as gif from './save-gif.js';
 import 'md-gum-polyfill';
@@ -143,13 +151,7 @@ function render() {
 }
 
 function start() {
-	return navigator.mediaDevices.getUserMedia({
-		video: {
-			width: {ideal: size},
-			height: {ideal: size},
-			frameRate: { ideal: 30, max: 30 }
-		},
-	})
+	return navigator.mediaDevices.getUserMedia(constraints)
 	.then(stream => {
 
 		started = true;
@@ -171,9 +173,13 @@ function start() {
 		stopFunc = stop;
 
 		video.src = window.URL.createObjectURL(stream);
-		video.play();
 
-		return stop;
+		return new Promise(function (resolve) {
+			video.onload = resolve;
+		}).then(() => {
+			video.onload = function(){};
+			return stop;
+		});
 	});
 }
 
