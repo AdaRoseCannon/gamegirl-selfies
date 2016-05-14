@@ -32,6 +32,7 @@
   },
   "dependencies": {
     "animated_gif": "0.0.3",
-    "debounce": "^1.0.0"
+    "debounce": "^1.0.0",
+    "md-gum-polyfill": "^1.0.0"
   }
 }

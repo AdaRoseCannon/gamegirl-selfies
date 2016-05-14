@@ -1,6 +1,7 @@
-/* global ColorThief, MediaDevices*/
+/* global ColorThief */
 import color from 'tinycolor2';
 import * as gif from './save-gif.js';
+import 'md-gum-polyfill';
 
 function vectorToColor([r,g,b]) {
 	const col = color({r,g,b});
@@ -14,8 +15,6 @@ function colorToVector(color) {
 }
 
 const size = 96;
-
-navigator.getUserMedia = (MediaDevices && MediaDevices.getUserMedia) || navigator.getUserMedia || navigator.mozGetUserMedia || navigator.webkitGetUserMedia;
 
 let started = false;
 let palette = false;
@@ -144,40 +143,37 @@ function render() {
 }
 
 function start() {
-	return new Promise(function (resolve) {
-		navigator.getUserMedia({
-			video: {
-				width: {ideal: size},
-				height: {ideal: size}
-			},
-		}, function (stream) {
+	return navigator.mediaDevices.getUserMedia({
+		video: {
+			width: {ideal: size},
+			height: {ideal: size},
+			frameRate: { ideal: 30, max: 30 }
+		},
+	})
+	.then(stream => {
 
-			started = true;
+		started = true;
 
-			// update palette every 2 seconds
-			if (!paletteInterval) togglePaletteUpdate();
-			paletteNeedsUpdate = true;
+		// update palette every 2 seconds
+		if (!paletteInterval) togglePaletteUpdate();
+		paletteNeedsUpdate = true;
 
-			function stop() {
+		function stop() {
 
-				video.pause();
-				video.src = '';
-				stream.getTracks()[0].stop();
-				paletteInterval = null;
-				clearInterval(paletteInterval);
-				stop = null;
-			}
+			video.pause();
+			video.src = '';
+			stream.getTracks()[0].stop();
+			paletteInterval = null;
+			clearInterval(paletteInterval);
+			stop = null;
+		}
 
-			stopFunc = stop;
+		stopFunc = stop;
 
-			video.src = window.URL.createObjectURL(stream);
-			video.play();
+		video.src = window.URL.createObjectURL(stream);
+		video.play();
 
-			return resolve(stop);
-
-		}, e => {
-			console.error(e);
-		});
+		return stop;
 	});
 }
 

@@ -5287,6 +5287,43 @@ function getProgress() {
 	return progress;
 }
 
+(function() {
+
+	var promisifiedOldGUM = function(constraints, successCallback, errorCallback) {
+
+		// First get ahold of getUserMedia, if present
+		var getUserMedia = (navigator.getUserMedia ||
+				navigator.webkitGetUserMedia ||
+				navigator.mozGetUserMedia ||
+				navigator.msGetUserMedia);
+
+		// Some browsers just don't implement it - return a rejected promise with an error
+		// to keep a consistent interface
+		if(!getUserMedia) {
+			return Promise.reject(new Error('getUserMedia is not implemented in this browser'));
+		}
+
+		// Otherwise, wrap the call to the old navigator.getUserMedia with a Promise
+		return new Promise(function(successCallback, errorCallback) {
+			getUserMedia.call(navigator, constraints, successCallback, errorCallback);
+		});
+		
+	}
+
+	// Older browsers might not implement mediaDevices at all, so we set an empty object first
+	if(navigator.mediaDevices === undefined) {
+		navigator.mediaDevices = {};
+	}
+
+	// Some browsers partially implement mediaDevices. We can't just assign an object
+	// with getUserMedia as it would overwrite existing properties.
+	// Here, we will just add the getUserMedia property if it's missing.
+	if(navigator.mediaDevices.getUserMedia === undefined) {
+		navigator.mediaDevices.getUserMedia = promisifiedOldGUM;
+	}
+	
+})();
+
 function vectorToColor(_ref) {
 	var _ref2 = babelHelpers.slicedToArray(_ref, 3);
 
@@ -5305,8 +5342,6 @@ function colorToVector(color) {
 }
 
 var size = 96;
-
-navigator.getUserMedia = MediaDevices && MediaDevices.getUserMedia || navigator.getUserMedia || navigator.mozGetUserMedia || navigator.webkitGetUserMedia;
 
 var started = false;
 var palette = false;
@@ -5456,39 +5491,36 @@ function render() {
 }
 
 function start() {
-	return new Promise(function (resolve) {
-		navigator.getUserMedia({
-			video: {
-				width: { ideal: size },
-				height: { ideal: size }
-			}
-		}, function (stream) {
+	return navigator.mediaDevices.getUserMedia({
+		video: {
+			width: { ideal: size },
+			height: { ideal: size },
+			frameRate: { ideal: 30, max: 30 }
+		}
+	}).then(function (stream) {
 
-			started = true;
+		started = true;
 
-			// update palette every 2 seconds
-			if (!paletteInterval) togglePaletteUpdate();
-			paletteNeedsUpdate = true;
+		// update palette every 2 seconds
+		if (!paletteInterval) togglePaletteUpdate();
+		paletteNeedsUpdate = true;
 
-			function stop() {
+		function stop() {
 
-				video.pause();
-				video.src = '';
-				stream.getTracks()[0].stop();
-				paletteInterval = null;
-				clearInterval(paletteInterval);
-				stop = null;
-			}
+			video.pause();
+			video.src = '';
+			stream.getTracks()[0].stop();
+			paletteInterval = null;
+			clearInterval(paletteInterval);
+			stop = null;
+		}
 
-			stopFunc = stop;
+		stopFunc = stop;
 
-			video.src = window.URL.createObjectURL(stream);
-			video.play();
+		video.src = window.URL.createObjectURL(stream);
+		video.play();
 
-			return resolve(stop);
-		}, function (e) {
-			console.error(e);
-		});
+		return stop;
 	});
 }
 

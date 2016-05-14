@@ -1,7 +1,7 @@
 {
   "name": "GameGirl Selfies",
   "short_name": "GameGirl",
-  "start_url": "/gamegirl-selfies/?standalone",
+  "start_url": "index.html?standalone",
   "display": "standalone",
   "icons": [{
     "src": "icon-192.png",
@@ -16,7 +16,7 @@
 	  "src": "GameGirlSelfies01.png",
 	  "sizes": "1280x1280"
   }],
+  "theme_color": "black",
   "background_color": "lavenderblush",
-  "scope": "/gamegirl-selfies/",
-
+  "scope": "/gamegirl-selfies/"
 }
